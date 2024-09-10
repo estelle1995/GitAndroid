@@ -1,6 +1,6 @@
 package com.example.myokdownload.dowload.core;
 
-public abstract class NamedRunnable implements Runnable{
+public abstract class NamedRunnable implements Runnable {
     protected final String name;
 
     public NamedRunnable(String name) {
@@ -8,7 +8,7 @@ public abstract class NamedRunnable implements Runnable{
     }
 
     @Override
-    public final void run() {
+    public void run() {
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(name);
         try {
@@ -23,6 +23,8 @@ public abstract class NamedRunnable implements Runnable{
     }
 
     protected abstract void execute() throws InterruptedException;
+
     protected abstract void interrupted(InterruptedException e);
+
     protected abstract void finished();
 }

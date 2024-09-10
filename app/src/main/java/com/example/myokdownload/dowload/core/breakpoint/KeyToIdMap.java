@@ -1,6 +1,5 @@
 package com.example.myokdownload.dowload.core.breakpoint;
 
-
 import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
@@ -11,10 +10,8 @@ import com.example.myokdownload.dowload.DownloadTask;
 import java.util.HashMap;
 
 public class KeyToIdMap {
-    @NonNull
-    private final HashMap<String, Integer> keyToIdMap;
-    @NonNull
-    private final SparseArray<String> idToKeyMap;
+    @NonNull private final HashMap<String, Integer> keyToIdMap;
+    @NonNull private final SparseArray<String> idToKeyMap;
 
     KeyToIdMap() {
         this(new HashMap<String, Integer>(), new SparseArray<String>());
@@ -31,6 +28,14 @@ public class KeyToIdMap {
         final Integer candidate = keyToIdMap.get(generateKey(task));
         if (candidate != null) return candidate;
         return null;
+    }
+
+    public void remove(int id) {
+        final String key = idToKeyMap.get(id);
+        if (key != null) {
+            keyToIdMap.remove(key);
+            idToKeyMap.remove(id);
+        }
     }
 
     public void add(@NonNull DownloadTask task, int id) {
