@@ -149,4 +149,25 @@ public class DownloadUrlConnection implements DownloadConnection.Connected, Down
     public String getRedirectLocation() {
         return redirectHandler.getRedirectLocation();
     }
+
+    public static class Factory implements  DownloadConnection.Factory {
+        private final Configuration configuration;
+
+        public Factory() {
+            this(null);
+        }
+
+        public Factory(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        DownloadConnection create(URL url) throws IOException {
+            return new DownloadUrlConnection(url, configuration);
+        }
+
+        @Override
+        public DownloadConnection create(String originUrl) throws IOException {
+            return new DownloadUrlConnection(originUrl, configuration);
+        }
+    }
 }

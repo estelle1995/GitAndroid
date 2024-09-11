@@ -17,8 +17,6 @@ public abstract class IdentifiedTask {
     @NonNull
     public abstract String getUrl();
 
-    public abstract Uri getUri();
-
     @NonNull protected abstract File getProvidedPathFile();
 
     @NonNull public abstract File getParentFile();
