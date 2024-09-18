@@ -1,6 +1,7 @@
 package com.example.myokdownload.dowload;
 
 import com.example.myokdownload.dowload.core.dispatcher.CallbackDispatcher;
+import com.example.myokdownload.dowload.core.file.DownloadOutputStream;
 import com.example.myokdownload.dowload.core.file.ProcessFileStrategy;
 
 public class OKDownload {
@@ -8,6 +9,7 @@ public class OKDownload {
     public DownloadMonitor monitor;
     public ProcessFileStrategy processFileStrategy;
     public CallbackDispatcher callbackDispatcher;
+    public DownloadOutputStream.Factory outputStreamFactory;
 
     private OKDownload() {
     }

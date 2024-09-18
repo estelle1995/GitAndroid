@@ -1,4 +1,4 @@
-package com.example.myokdownload.dowload.thread;
+package com.example.myokdownload.dowload.core.thread;
 
 import androidx.annotation.NonNull;
 

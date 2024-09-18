@@ -1,6 +1,6 @@
 package com.example.myokdownload.dowload.core.dispatcher;
 
-import com.example.myokdownload.dowload.thread.ThreadUtil;
+import com.example.myokdownload.dowload.core.thread.ThreadUtil;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;

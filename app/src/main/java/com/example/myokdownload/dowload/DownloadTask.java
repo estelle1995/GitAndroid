@@ -19,6 +19,12 @@ public class DownloadTask extends IdentifiedTask {
     public int minIntervalMillisCallbackProcess;
     BreakpointInfo info;
 
+    public int flushBufferSize;
+    public int syncBufferSize;
+    public int syncBufferIntervalMills;
+    @Nullable private File targetFile;
+    public @Nullable Boolean isPreAllocateLength;
+
     @Override
     public int getId() {
         return 0;
@@ -28,6 +34,10 @@ public class DownloadTask extends IdentifiedTask {
     @Override
     public String getUrl() {
         return "";
+    }
+
+    @Nullable public File getFile() {
+        return targetFile;
     }
 
     @NonNull
