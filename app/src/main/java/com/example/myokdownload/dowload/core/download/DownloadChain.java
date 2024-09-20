@@ -1,12 +1,14 @@
-package com.example.myokdownload.dowload.core.dispatcher;
-
-import com.example.myokdownload.dowload.core.download.DownloadCache;
+package com.example.myokdownload.dowload.core.download;
 
 public class DownloadChain implements Runnable {
     public DownloadCache cache;
 
     @Override
     public void run() {
+
+    }
+
+    public void cancel() {
 
     }
 }

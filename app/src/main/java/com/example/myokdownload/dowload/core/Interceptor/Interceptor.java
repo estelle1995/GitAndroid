@@ -3,7 +3,7 @@ package com.example.myokdownload.dowload.core.Interceptor;
 import androidx.annotation.NonNull;
 
 import com.example.myokdownload.dowload.core.connection.DownloadConnection;
-import com.example.myokdownload.dowload.core.dispatcher.DownloadChain;
+import com.example.myokdownload.dowload.core.download.DownloadChain;
 
 import java.io.IOException;
 

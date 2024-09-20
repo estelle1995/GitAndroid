@@ -7,23 +7,35 @@ import androidx.annotation.Nullable;
 
 import com.example.myokdownload.dowload.core.IdentifiedTask;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
+import com.example.myokdownload.dowload.core.download.DownloadStrategy;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DownloadTask extends IdentifiedTask {
     public Uri uri;
+    public Map<String, List<String>> headerMapFields;
+
     public boolean autoCallbackToUIThread;
     public DownloadListener listener;
     public AtomicLong lastCallbackProcessTimestamp;
     public int minIntervalMillisCallbackProcess;
     BreakpointInfo info;
+    public DownloadStrategy.FilenameHolder filenameHolder;
+    File directoryFile;
+    public Integer connectionCount;
 
     public int flushBufferSize;
     public int syncBufferSize;
     public int syncBufferIntervalMills;
     @Nullable private File targetFile;
     public @Nullable Boolean isPreAllocateLength;
+    public boolean wifiRequired;
+
+    public String redirectLocation;
+    public boolean filenameFromResponse;
 
     @Override
     public int getId() {
@@ -37,6 +49,10 @@ public class DownloadTask extends IdentifiedTask {
     }
 
     @Nullable public File getFile() {
+        final String filename = filenameHolder.get();
+        if (filename == null) return null;
+        if (targetFile == null) targetFile = new File(directoryFile, filename);
+
         return targetFile;
     }
 

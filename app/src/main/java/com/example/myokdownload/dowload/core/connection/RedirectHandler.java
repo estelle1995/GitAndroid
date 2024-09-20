@@ -30,7 +30,7 @@ public class RedirectHandler implements IRedirectHandler {
             redirectLocation = RedirectUtil.getRedirectedUrl(originalConnected, responseCode);
             downloadUrlConnection.url = new URL(redirectLocation);
             downloadUrlConnection.configUrlConnection();
-            Util.addRequestHeaderFields(headerProperties,
+            ConnectionUtil.addRequestHeaderFields(headerProperties,
                     downloadUrlConnection);
 
             downloadUrlConnection.connection.connect();

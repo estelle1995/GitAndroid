@@ -1,6 +1,7 @@
 package com.example.myokdownload.dowload.core.breakpoint;
 
-import static com.example.myokdownload.dowload.core.Util.CHUNKED_CONTENT_LENGTH;
+
+import static com.example.myokdownload.dowload.core.connection.ConnectionUtil.CHUNKED_CONTENT_LENGTH;
 
 import androidx.annotation.IntRange;
 

@@ -110,4 +110,16 @@ public class MultiPointOutputStream {
     Future executeSyncRunnableAsync() {
         return FILE_IO_EXECUTOR.submit(syncRunnable);
     }
+
+    public void cancelAsync() {
+        FILE_IO_EXECUTOR.execute(new Runnable() {
+            @Override public void run() {
+                cancel();
+            }
+        });
+    }
+
+    public synchronized void cancel() {
+
+    }
 }
