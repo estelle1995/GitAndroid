@@ -96,7 +96,7 @@ public class DownloadUrlConnection implements DownloadConnection.Connected, Down
         final Map<String, List<String>> headerProperties = getRequestProperties();
         connection.connect();
         redirectHandler.handleRedirect(this, this, headerProperties);
-        return null;
+        return this;
     }
 
     @Override

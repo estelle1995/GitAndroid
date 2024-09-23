@@ -11,6 +11,7 @@ public class BreakpointInfo {
     public int id;
 
     public String etag;
+    public String url;
 
     public DownloadStrategy.FilenameHolder filenameHolder;
     public boolean chunked;

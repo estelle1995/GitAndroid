@@ -4,6 +4,7 @@ import static com.example.myokdownload.dowload.core.cause.ResumeFailedCause.RESP
 import static com.example.myokdownload.dowload.core.cause.ResumeFailedCause.RESPONSE_ETAG_CHANGED;
 import static com.example.myokdownload.dowload.core.cause.ResumeFailedCause.RESPONSE_PRECONDITION_FAILED;
 import static com.example.myokdownload.dowload.core.cause.ResumeFailedCause.RESPONSE_RESET_RANGE_NOT_FROM_0;
+import static com.example.myokdownload.dowload.core.connection.ConnectionUtil.ETAG;
 
 import android.Manifest;
 import android.content.Context;
@@ -16,14 +17,16 @@ import androidx.annotation.Nullable;
 import com.example.myokdownload.dowload.DownloadTask;
 import com.example.myokdownload.dowload.OKDownload;
 import com.example.myokdownload.dowload.core.Util;
+import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointStore;
 import com.example.myokdownload.dowload.core.cause.ResumeFailedCause;
 import com.example.myokdownload.dowload.core.connection.ConnectionUtil;
+import com.example.myokdownload.dowload.core.connection.DownloadConnection;
 import com.example.myokdownload.dowload.core.exception.NetworkPolicyException;
+import com.example.myokdownload.dowload.core.exception.ResumeFailedException;
+import com.example.myokdownload.dowload.core.exception.ServerCanceledException;
 import com.example.myokdownload.dowload.core.log.LogUtil;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -51,7 +54,7 @@ public class DownloadStrategy {
         return isAcceptRange;
     }
 
-    @Nullable public ResumeFailedCause getPreConditionFailCause(int responseCode, boolean isAlreadyProceed, @NonNull BreakpointInfo info, @Nullable String responseEtag) {
+    @Nullable public ResumeFailedCause getPreconditionFailedCause(int responseCode, boolean isAlreadyProceed, @NonNull BreakpointInfo info, @Nullable String responseEtag) {
         final String localEtag = info.etag;
         if (responseCode == HttpURLConnection.HTTP_PRECON_FAILED) {
             return RESPONSE_PRECONDITION_FAILED;
@@ -241,6 +244,49 @@ public class DownloadStrategy {
         }
         @Override public int hashCode() {
             return filename == null ? 0 : filename.hashCode();
+        }
+    }
+
+    public ResumeAvailableResponseCheck resumeAvailableResponseCheck(
+            DownloadConnection.Connected connected,
+            int blockIndex,
+            BreakpointInfo info) {
+        return new ResumeAvailableResponseCheck(connected, blockIndex, info);
+    }
+
+    public static class ResumeAvailableResponseCheck {
+        @NonNull private DownloadConnection.Connected connected;
+        @NonNull private BreakpointInfo info;
+        private int blockIndex;
+
+        protected ResumeAvailableResponseCheck(@NonNull DownloadConnection.Connected connected,
+                                               int blockIndex, @NonNull BreakpointInfo info) {
+            this.connected = connected;
+            this.info = info;
+            this.blockIndex = blockIndex;
+        }
+
+        public void inspect() throws IOException {
+            final BlockInfo blockInfo = info.getBlock(blockIndex);
+            final int code = connected.getResponseCode();
+            final String newEtag = connected.getResponseHeaderField(ETAG);
+
+            final ResumeFailedCause resumeFailedCause = OKDownload.with().downloadStrategy
+                    .getPreconditionFailedCause(code, blockInfo.getCurrentOffset() != 0,
+                            info, newEtag);
+
+            if (resumeFailedCause != null) {
+                // resume failed, relaunch from beginning.
+                throw new ResumeFailedException(resumeFailedCause);
+            }
+
+            final boolean isServerCancelled = OKDownload.with().downloadStrategy
+                    .isServerCanceled(code, blockInfo.getCurrentOffset() != 0);
+
+            if (isServerCancelled) {
+                // server cancelled, end task.
+                throw new ServerCanceledException(code, blockInfo.getCurrentOffset());
+            }
         }
     }
 }

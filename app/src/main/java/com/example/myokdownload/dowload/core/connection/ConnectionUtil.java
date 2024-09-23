@@ -10,10 +10,13 @@ import androidx.annotation.Nullable;
 
 import com.example.myokdownload.dowload.OKDownload;
 import com.example.myokdownload.dowload.core.log.LogUtil;
+import com.example.myokdownload.BuildConfig;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ConnectionUtil {
     // request method
@@ -95,10 +98,32 @@ public class ConnectionUtil {
         }
     }
 
+    public static void addDefaultUserAgent(@NonNull final DownloadConnection connection) {
+        final String userAgent = "OkDownload/" + BuildConfig.VERSION_NAME;
+        connection.addHeader(USER_AGENT, userAgent);
+    }
+
     public static void inspectUserHeader(@NonNull Map<String, List<String>> headerField)
             throws IOException {
         if (headerField.containsKey(IF_MATCH) || headerField.containsKey(RANGE)) {
             throw new IOException(IF_MATCH + " and " + RANGE + " only can be handle by internal!");
         }
+    }
+
+    public static long parseContentLengthFromContentRange(@Nullable String contentRange) {
+        if (contentRange == null || contentRange.length() == 0) return CHUNKED_CONTENT_LENGTH;
+        final String pattern = "bytes (\\d+)-(\\d+)/\\d+";
+        try {
+            final Pattern r = Pattern.compile(pattern);
+            final Matcher m = r.matcher(contentRange);
+            if (m.find()) {
+                final long rangeStart = Long.parseLong(m.group(1));
+                final long rangeEnd = Long.parseLong(m.group(2));
+                return rangeEnd - rangeStart + 1;
+            }
+        } catch (Exception e) {
+            LogUtil.w("Util", "parse content-length from content-range failed " + e);
+        }
+        return CHUNKED_CONTENT_LENGTH;
     }
 }

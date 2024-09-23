@@ -86,7 +86,7 @@ public class BreakpointRemoteCheck {
         }
 
         // 2. collect result
-        final ResumeFailedCause resumeFailedCause = downloadStrategy.getPreConditionFailCause(responseCode, info.getTotalOffset() != 0, info, responseEtag);
+        final ResumeFailedCause resumeFailedCause = downloadStrategy.getPreconditionFailedCause(responseCode, info.getTotalOffset() != 0, info, responseEtag);
 
         this.resumable = resumeFailedCause == null;
         this.failedCause = resumeFailedCause;

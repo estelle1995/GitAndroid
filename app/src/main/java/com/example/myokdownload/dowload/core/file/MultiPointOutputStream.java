@@ -107,6 +107,10 @@ public class MultiPointOutputStream {
         }
     }
 
+    public void catchBlockConnectException(int blockIndex) {
+        noMoreStreamList.add(blockIndex);
+    }
+
     Future executeSyncRunnableAsync() {
         return FILE_IO_EXECUTOR.submit(syncRunnable);
     }
