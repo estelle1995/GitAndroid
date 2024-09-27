@@ -94,6 +94,15 @@ public class DownloadStrategy {
         return 5;
     }
 
+    public boolean validFilenameFromStore(@NonNull DownloadTask task) {
+        final String filename = OKDownload.with().breakpointStore
+                .getResponseFilename(task.getUrl());
+        if (filename == null) return false;
+
+        task.filenameHolder.set(filename);
+        return true;
+    }
+
     public boolean inspectAnotherSameInfo(@NonNull DownloadTask task, @NonNull BreakpointInfo info,
                                           long instanceLength) {
         if (!task.filenameFromResponse) return false;

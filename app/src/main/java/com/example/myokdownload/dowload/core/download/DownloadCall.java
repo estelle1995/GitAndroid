@@ -22,6 +22,8 @@ import com.example.myokdownload.dowload.core.thread.ThreadUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -216,7 +218,50 @@ public class DownloadCall extends NamedRunnable {
     }
 
     void start(final DownloadCache cache, BreakpointInfo info) throws InterruptedException {
+        final int blockCount = info.getBlockCount();
+        final List<DownloadChain> blockChainList = new ArrayList<>(info.getBlockCount());
+        final List<Integer> blockIndexList = new ArrayList<>();
+        for (int i = 0; i < blockCount; i++) {
+            final BlockInfo blockInfo = info.getBlock(i);
+            if (blockInfo.getCurrentOffset() == blockInfo.getContentLength()) {
+                continue;
+            }
 
+            Util.resetBlockIfDirty(blockInfo);
+            final DownloadChain chain = DownloadChain.createChain(i, task, info, cache, store);
+            blockChainList.add(chain);
+            blockIndexList.add(chain.getBlockIndex());
+        }
+
+        if (canceled) return;
+
+        cache.getOutputStream().setRequireStreamBlocks(blockIndexList);
+        startBlocks(blockChainList);
+    }
+
+    void startBlocks(List<DownloadChain> tasks) throws InterruptedException {
+        ArrayList<Future> futures = new ArrayList<>(tasks.size());
+        try {
+            for (DownloadChain chain : tasks) {
+                futures.add(submitChain(chain));
+            }
+            blockChainList.addAll(tasks);
+
+            for (Future future: futures) {
+                if (!future.isDone()) {
+                    try {
+                        future.get();
+                    } catch (CancellationException | ExecutionException ignore) { }
+                }
+            }
+        } catch (Throwable t) {
+            for (Future future : futures) {
+                future.cancel(true);
+            }
+            throw t;
+        } finally {
+            blockChainList.removeAll(tasks);
+        }
     }
 
     void assembleBlockAndCallbackFromBeginning(@NonNull BreakpointInfo info, @NonNull BreakpointRemoteCheck remoteCheck,
@@ -251,7 +296,8 @@ public class DownloadCall extends NamedRunnable {
 
     @Override
     protected void finished() {
-
+        OKDownload.with().downloadDispatcher.finish(this);
+        LogUtil.d(TAG, "call is finished " + task.getId());
     }
 
     private void inspectTaskStart() {
@@ -261,5 +307,9 @@ public class DownloadCall extends NamedRunnable {
 
     Future<?> submitChain(DownloadChain chain) {
         return EXECUTOR.submit(chain);
+    }
+
+    public boolean equalsTask(@NonNull DownloadTask task) {
+        return this.task.equals(task);
     }
 }

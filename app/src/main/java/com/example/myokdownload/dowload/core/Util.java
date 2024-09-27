@@ -16,7 +16,9 @@ import com.example.myokdownload.dowload.OKDownload;
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
 import com.example.myokdownload.dowload.core.connection.DownloadConnection;
+import com.example.myokdownload.dowload.core.log.LogUtil;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -93,6 +95,28 @@ public class Util {
         return uri.getScheme().equals(ContentResolver.SCHEME_FILE);
     }
 
+    @SuppressLint("Range")
+    @Nullable public static String getFilenameFromContentUri(@NonNull Uri contentUri) {
+        final ContentResolver resolver = OKDownload.with().context.getContentResolver();
+        final Cursor cursor = resolver.query(contentUri, null, null, null, null);
+        if (cursor != null) {
+            try {
+                cursor.moveToFirst();
+                return cursor
+                        .getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+            } finally {
+                cursor.close();
+            }
+        }
+
+        return null;
+    }
+
+    @NonNull public static File getParentFile(final File file) {
+        final File candidate = file.getParentFile();
+        return candidate == null ? new File("/") : candidate;
+    }
+
     public static long getFreeSpaceBytes(@NonNull StatFs statFs) {
         long freeSpaceBytes;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -101,5 +125,20 @@ public class Util {
             freeSpaceBytes = statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
         }
         return freeSpaceBytes;
+    }
+
+    public static void resetBlockIfDirty(BlockInfo info) {
+        boolean isDirty = false;
+
+        if (info.getCurrentOffset() < 0) {
+            isDirty = true;
+        } else if (info.getCurrentOffset() > info.getContentLength()) {
+            isDirty = true;
+        }
+
+        if (isDirty) {
+            LogUtil.w("resetBlockIfDirty", "block is dirty so have to reset: " + info);
+            info.resetBlock();
+        }
     }
 }

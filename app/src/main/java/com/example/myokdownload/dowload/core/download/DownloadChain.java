@@ -1,12 +1,18 @@
 package com.example.myokdownload.dowload.core.download;
 
 import android.os.ParcelFileDescriptor;
+import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
 import com.example.myokdownload.dowload.DownloadTask;
 import com.example.myokdownload.dowload.OKDownload;
+import com.example.myokdownload.dowload.core.Interceptor.BreakpointInterceptor;
+import com.example.myokdownload.dowload.core.Interceptor.FetchDataInterceptor;
 import com.example.myokdownload.dowload.core.Interceptor.Interceptor;
+import com.example.myokdownload.dowload.core.Interceptor.RetryInterceptor;
+import com.example.myokdownload.dowload.core.Interceptor.connect.CallServerInterceptor;
+import com.example.myokdownload.dowload.core.Interceptor.connect.HeaderInterceptor;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
 import com.example.myokdownload.dowload.core.breakpoint.DownloadStore;
 import com.example.myokdownload.dowload.core.connection.DownloadConnection;
@@ -59,12 +65,21 @@ public class DownloadChain implements Runnable {
 
     @Override
     public void run() {
+        if (isFinished()) {
+            throw new IllegalAccessError("The chain has been finished!");
+        }
+        this.currentThread = Thread.currentThread();
 
+        try {
+            start();
+        } catch (IOException ignored) {
+
+        } finally {
+            finished.set(true);
+            releaseConnectionAsync();
+        }
     }
 
-    public void cancel() {
-
-    }
     private DownloadChain(int blockIndex, @NonNull DownloadTask task, @NonNull BreakpointInfo info,
                           @NonNull DownloadCache cache, @NonNull DownloadStore store) {
         this.blockIndex = blockIndex;
@@ -73,6 +88,36 @@ public class DownloadChain implements Runnable {
         this.info = info;
         this.store = store;
         this.callbackDispatcher = OKDownload.with().callbackDispatcher;
+    }
+
+    void start() throws IOException {
+        final CallbackDispatcher dispatcher = OKDownload.with().callbackDispatcher;
+        // connect chain
+        final RetryInterceptor retryInterceptor = new RetryInterceptor();
+        final BreakpointInterceptor breakpointInterceptor = new BreakpointInterceptor();
+        connectInterceptorList.add(retryInterceptor);
+        connectInterceptorList.add(breakpointInterceptor);
+        connectInterceptorList.add(new HeaderInterceptor());
+        connectInterceptorList.add(new CallServerInterceptor());
+
+        connectIndex = 0;
+        final DownloadConnection.Connected connected = processConnect();
+        if (cache.isInterrupt()) {
+            throw InterruptException.SIGNAL;
+        }
+
+        dispatcher.dispatch().fetchStart(task, blockIndex, getResponseContentLength());
+        // fetch chain
+        final FetchDataInterceptor fetchDataInterceptor =
+                new FetchDataInterceptor(blockIndex, connected.getInputStream(),
+                        getOutputStream(), task);
+        fetchInterceptorList.add(retryInterceptor);
+        fetchInterceptorList.add(breakpointInterceptor);
+        fetchInterceptorList.add(fetchDataInterceptor);
+
+        fetchIndex = 0;
+        final long totalFetchedBytes = processFetch();
+        dispatcher.dispatch().fetchEnd(task, blockIndex, totalFetchedBytes);
     }
 
     static DownloadChain createChain(int blockIndex, DownloadTask task, @NonNull BreakpointInfo info, @NonNull DownloadCache cache, @NonNull DownloadStore store) {
@@ -172,4 +217,14 @@ public class DownloadChain implements Runnable {
         }
         connection = null;
     }
+
+    void releaseConnectionAsync() {
+        EXECUTOR.execute(releaseConnectionRunnable);
+    }
+
+    private final Runnable releaseConnectionRunnable = new Runnable() {
+        @Override public void run() {
+            releaseConnection();
+        }
+    };
 }

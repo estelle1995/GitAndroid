@@ -212,6 +212,10 @@ public class MultiPointOutputStream {
         LockSupport.unpark(thread);
     }
 
+    public void setRequireStreamBlocks(List<Integer> requireStreamBlocks) {
+        this.requireStreamBlocks = requireStreamBlocks;
+    }
+
     public void inspectComplete(int blockIndex) throws IOException {
         final BlockInfo blockInfo = info.getBlock(blockIndex);
         if (!(blockInfo.getCurrentOffset() == blockInfo.getContentLength())) {

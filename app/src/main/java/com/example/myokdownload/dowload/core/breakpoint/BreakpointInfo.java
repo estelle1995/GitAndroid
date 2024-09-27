@@ -1,10 +1,14 @@
 package com.example.myokdownload.dowload.core.breakpoint;
 
+import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.myokdownload.dowload.core.download.DownloadStrategy;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BreakpointInfo {
@@ -20,6 +24,24 @@ public class BreakpointInfo {
     private File targetFile;
 
     private List<BlockInfo> blockInfoList;
+    private final boolean taskOnlyProvidedParentPath;
+
+    BreakpointInfo(int id, @NonNull String url, @NonNull File parentFile,
+                   @Nullable String filename, boolean taskOnlyProvidedParentPath) {
+        this.id = id;
+        this.url = url;
+        this.parentFile = parentFile;
+        this.blockInfoList = new ArrayList<>();
+
+        if (TextUtils.isEmpty(filename)) {
+            filenameHolder = new DownloadStrategy.FilenameHolder();
+        } else {
+            filenameHolder = new DownloadStrategy.FilenameHolder(filename);
+        }
+
+        this.taskOnlyProvidedParentPath = taskOnlyProvidedParentPath;
+    }
+
 
     public BlockInfo getBlock(int blockIndex) {
         return blockInfoList.get(blockIndex);
@@ -74,5 +96,15 @@ public class BreakpointInfo {
 
     public void resetBlockInfos() {
         this.blockInfoList.clear();
+    }
+
+    public BreakpointInfo copy() {
+        final BreakpointInfo info = new BreakpointInfo(id, url, parentFile, filenameHolder.get(),
+                taskOnlyProvidedParentPath);
+        info.chunked = this.chunked;
+        for (BlockInfo blockInfo : blockInfoList) {
+            info.blockInfoList.add(blockInfo.copy());
+        }
+        return info;
     }
 }
