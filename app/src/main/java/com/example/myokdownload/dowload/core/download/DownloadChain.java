@@ -50,6 +50,8 @@ public class DownloadChain implements Runnable {
 
     private volatile DownloadConnection connection;
 
+    long noCallbackIncreaseBytes;
+
     final AtomicBoolean finished = new AtomicBoolean(false);
 
     boolean isFinished() { return finished.get(); }
@@ -80,6 +82,23 @@ public class DownloadChain implements Runnable {
     public DownloadConnection.Connected processConnect() throws IOException {
         if (cache.isInterrupt()) throw InterruptException.SIGNAL;
         return connectInterceptorList.get(connectIndex++).interceptConnect(this);
+    }
+
+    public long getResponseContentLength() {
+        return responseContentLength;
+    }
+
+    public long processFetch() throws IOException {
+        if (cache.isInterrupt()) throw InterruptException.SIGNAL;
+        return fetchInterceptorList.get(fetchIndex++).interceptFetch(this);
+    }
+
+    public long loopFetch() throws IOException {
+        if (fetchIndex == fetchInterceptorList.size()) {
+            // last one is fetch data interceptor
+            fetchIndex--;
+        }
+        return processFetch();
     }
 
     @NonNull public synchronized DownloadConnection getConnectionOrCreate() throws IOException {
@@ -129,9 +148,20 @@ public class DownloadChain implements Runnable {
         return this.cache.getOutputStream();
     }
 
+    public void flushNoCallbackIncreaseBytes() {
+        if (noCallbackIncreaseBytes == 0) return;
+
+        callbackDispatcher.dispatch().fetchProgress(task, blockIndex, noCallbackIncreaseBytes);
+        noCallbackIncreaseBytes = 0;
+    }
+
     public void resetConnectForRetry() {
         connectIndex = 1;
         releaseConnection();
+    }
+
+    public void increaseCallbackBytes(long increaseBytes) {
+        this.noCallbackIncreaseBytes += increaseBytes;
     }
 
     public synchronized void releaseConnection() {

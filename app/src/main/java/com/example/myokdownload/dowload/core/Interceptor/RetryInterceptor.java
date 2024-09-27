@@ -10,7 +10,7 @@ import com.example.myokdownload.dowload.core.exception.RetryException;
 
 import java.io.IOException;
 
-public class RetryInterceptor implements Interceptor.Connect {
+public class RetryInterceptor implements Interceptor.Connect, Interceptor.Fetch {
     @NonNull
     @Override
     public DownloadConnection.Connected interceptConnect(DownloadChain chain) throws IOException {
@@ -32,6 +32,16 @@ public class RetryInterceptor implements Interceptor.Connect {
                 chain.getOutputStream().catchBlockConnectException(chain.getBlockIndex());
                 throw e;
             }
+        }
+    }
+
+    @Override
+    public long interceptFetch(DownloadChain chain) throws IOException {
+        try {
+            return chain.processFetch();
+        } catch (IOException e) {
+            chain.getCache().catchException(e);
+            throw e;
         }
     }
 }

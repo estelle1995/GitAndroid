@@ -26,6 +26,7 @@ public class DownloadTask extends IdentifiedTask {
     public DownloadStrategy.FilenameHolder filenameHolder;
     File directoryFile;
     public Integer connectionCount;
+    public int readBufferSize;
 
     public int flushBufferSize;
     public int syncBufferSize;

@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
+import android.os.StatFs;
 import android.provider.OpenableColumns;
 
 import androidx.annotation.NonNull;
@@ -85,5 +87,19 @@ public class Util {
             final BlockInfo blockInfo = new BlockInfo(startOffset, contentLength);
             info.addBlock(blockInfo);
         }
+    }
+
+    public static boolean isUriFileScheme(@NonNull Uri uri) {
+        return uri.getScheme().equals(ContentResolver.SCHEME_FILE);
+    }
+
+    public static long getFreeSpaceBytes(@NonNull StatFs statFs) {
+        long freeSpaceBytes;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            freeSpaceBytes = statFs.getAvailableBytes();
+        } else {
+            freeSpaceBytes = statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
+        }
+        return freeSpaceBytes;
     }
 }

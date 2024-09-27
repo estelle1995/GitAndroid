@@ -1,5 +1,6 @@
 package com.example.myokdownload.dowload.core.Interceptor;
 
+import static com.example.myokdownload.dowload.core.connection.ConnectionUtil.CHUNKED_CONTENT_LENGTH;
 import static com.example.myokdownload.dowload.core.connection.ConnectionUtil.CONTENT_LENGTH;
 import static com.example.myokdownload.dowload.core.connection.ConnectionUtil.CONTENT_RANGE;
 
@@ -17,13 +18,14 @@ import com.example.myokdownload.dowload.core.connection.DownloadConnection;
 import com.example.myokdownload.dowload.core.download.DownloadChain;
 import com.example.myokdownload.dowload.core.exception.InterruptException;
 import com.example.myokdownload.dowload.core.exception.RetryException;
+import com.example.myokdownload.dowload.core.file.MultiPointOutputStream;
 import com.example.myokdownload.dowload.core.log.LogUtil;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BreakpointInterceptor implements Interceptor.Connect {
+public class BreakpointInterceptor implements Interceptor.Connect, Interceptor.Fetch {
     private static final String TAG = "BreakpointInterceptor";
 
     @NonNull
@@ -104,5 +106,38 @@ public class BreakpointInterceptor implements Interceptor.Connect {
         }
 
         return -1;
+    }
+
+    @Override
+    public long interceptFetch(DownloadChain chain) throws IOException {
+        final long contentLength = chain.getResponseContentLength();
+        final int blockIndex = chain.getBlockIndex();
+        final boolean isNotChunked = contentLength != CHUNKED_CONTENT_LENGTH;
+
+        long fetchLength = 0;
+        long processFetchLength;
+
+        final MultiPointOutputStream outputStream = chain.getOutputStream();
+
+        try {
+            while (true) {
+                processFetchLength = chain.loopFetch();
+                if (processFetchLength == -1) break;
+                fetchLength += processFetchLength;
+            }
+        } finally {
+            chain.flushNoCallbackIncreaseBytes();
+            if (!chain.getCache().isUserCanceled()) outputStream.done(blockIndex);
+        }
+
+        if (isNotChunked) {
+            outputStream.inspectComplete(blockIndex);
+
+            if (fetchLength != contentLength) {
+                throw new IOException("Fetch-length isn't equal to the response content-length, "
+                        + fetchLength + "!= " + contentLength);
+            }
+        }
+        return fetchLength;
     }
 }
