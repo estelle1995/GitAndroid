@@ -23,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Util {
@@ -48,6 +49,17 @@ public class Util {
 
     public static boolean isUriContentScheme(@NonNull Uri uri) {
         return uri.getScheme().equals(ContentResolver.SCHEME_CONTENT);
+    }
+
+    /**
+     * @param si whether using SI unit refer to International System of Units.
+     */
+    public static String humanReadableBytes(long bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+        return String.format(Locale.ENGLISH, "%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
     @SuppressLint("Range")

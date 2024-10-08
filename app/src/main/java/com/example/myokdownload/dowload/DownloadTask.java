@@ -163,6 +163,11 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
         return id;
     }
 
+    @Nullable public BreakpointInfo getInfo() {
+        if (info == null) info = OKDownload.with().breakpointStore.get(id);
+        return info;
+    }
+
     @NonNull
     @Override
     public String getUrl() {
