@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class DownloadTask extends IdentifiedTask {
+public class DownloadTask extends IdentifiedTask implements Comparable<DownloadTask> {
     int id;
     String url;
     public Uri uri;
@@ -207,8 +207,33 @@ public class DownloadTask extends IdentifiedTask {
         return false;
     }
 
+    public int getPriority() {
+        return priority;
+    }
+
+    public static MockTaskForCompare mockTaskForCompare(int id) {
+        return new MockTaskForCompare(id);
+    }
+
+    public void enqueue(DownloadListener listener) {
+        this.listener = listener;
+        OKDownload.with().downloadDispatcher.enqueue(this);
+    }
+
+    public static void enqueue(DownloadTask[] tasks, DownloadListener listener) {
+        for (DownloadTask task : tasks) {
+            task.listener = listener;
+        }
+        OKDownload.with().downloadDispatcher.enqueue(tasks);
+    }
+
     @Override public int hashCode() {
         return (url + providedPathFile.toString() + filenameHolder.get()).hashCode();
+    }
+
+    @Override
+    public int compareTo(DownloadTask o) {
+        return o.getPriority() - getPriority();
     }
 
 
@@ -526,6 +551,50 @@ public class DownloadTask extends IdentifiedTask {
                     autoCallbackToUIThread, minIntervalMillisCallbackProcess,
                     headerMapFields, filename, passIfAlreadyCompleted, isWifiRequired,
                     isFilenameFromResponse, connectionCount, isPreAllocateLength);
+        }
+    }
+
+    public static class MockTaskForCompare extends IdentifiedTask {
+        final int id;
+        @NonNull final String url;
+        @NonNull final File providedPathFile;
+        @Nullable final String filename;
+        @NonNull final File parentFile;
+
+        public MockTaskForCompare(int id) {
+            this.id = id;
+            this.url = EMPTY_URL;
+            this.providedPathFile = EMPTY_FILE;
+            this.filename = null;
+            this.parentFile = EMPTY_FILE;
+        }
+
+        public MockTaskForCompare(int id, @NonNull DownloadTask task) {
+            this.id = id;
+            this.url = task.url;
+            this.parentFile = task.getParentFile();
+            this.providedPathFile = task.providedPathFile;
+            this.filename = task.getFilename();
+        }
+
+        @Override public int getId() {
+            return id;
+        }
+
+        @NonNull @Override public String getUrl() {
+            return url;
+        }
+
+        @NonNull @Override protected File getProvidedPathFile() {
+            return providedPathFile;
+        }
+
+        @NonNull @Override public File getParentFile() {
+            return parentFile;
+        }
+
+        @Nullable @Override public String getFilename() {
+            return filename;
         }
     }
 }

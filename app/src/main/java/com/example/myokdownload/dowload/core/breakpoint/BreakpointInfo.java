@@ -26,8 +26,25 @@ public class BreakpointInfo {
     private List<BlockInfo> blockInfoList;
     private final boolean taskOnlyProvidedParentPath;
 
+    public BreakpointInfo(int id, @NonNull String url, @NonNull File parentFile,
+                          @Nullable String filename) {
+        this.id = id;
+        this.url = url;
+        this.parentFile = parentFile;
+        this.blockInfoList = new ArrayList<>();
+
+        if (TextUtils.isEmpty(filename)) {
+            filenameHolder = new DownloadStrategy.FilenameHolder();
+            taskOnlyProvidedParentPath = true;
+        } else {
+            filenameHolder = new DownloadStrategy.FilenameHolder(filename);
+            taskOnlyProvidedParentPath = false;
+            targetFile = new File(parentFile, filename);
+        }
+    }
+
     BreakpointInfo(int id, @NonNull String url, @NonNull File parentFile,
-                   @Nullable String filename, boolean taskOnlyProvidedParentPath) {
+                          @Nullable String filename, boolean taskOnlyProvidedParentPath) {
         this.id = id;
         this.url = url;
         this.parentFile = parentFile;

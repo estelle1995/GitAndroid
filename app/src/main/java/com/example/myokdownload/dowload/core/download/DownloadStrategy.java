@@ -20,6 +20,7 @@ import com.example.myokdownload.dowload.core.Util;
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointStore;
+import com.example.myokdownload.dowload.core.breakpoint.DownloadStore;
 import com.example.myokdownload.dowload.core.cause.ResumeFailedCause;
 import com.example.myokdownload.dowload.core.connection.ConnectionUtil;
 import com.example.myokdownload.dowload.core.connection.DownloadConnection;
@@ -28,6 +29,7 @@ import com.example.myokdownload.dowload.core.exception.ResumeFailedException;
 import com.example.myokdownload.dowload.core.exception.ServerCanceledException;
 import com.example.myokdownload.dowload.core.log.LogUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.UnknownHostException;
@@ -101,6 +103,28 @@ public class DownloadStrategy {
 
         task.filenameHolder.set(filename);
         return true;
+    }
+
+    public void validInfoOnCompleted(@NonNull DownloadTask task, @NonNull DownloadStore store) {
+        BreakpointInfo info = store.getAfterCompleted(task.getId());
+        if (info == null) {
+            info = new BreakpointInfo(task.getId(), task.getUrl(), task.getParentFile(), task.getFilename());
+            final long size;
+            if (Util.isUriContentScheme(task.uri)) {
+                size = Util.getSizeFromContentUri(task.uri);
+            } else {
+                final File file = task.getFile();
+                if (file == null) {
+                    size = 0;
+                    LogUtil.w(TAG, "file is not ready on valid info for task on complete state "
+                            + task);
+                } else {
+                    size = file.length();
+                }
+            }
+            info.addBlock(new BlockInfo(0, size, size));
+        }
+        DownloadTask.TaskHideWrapper.setBreakpointInfo(task, info);
     }
 
     public boolean inspectAnotherSameInfo(@NonNull DownloadTask task, @NonNull BreakpointInfo info,

@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 
 import com.example.myokdownload.dowload.DownloadTask;
 import com.example.myokdownload.dowload.OKDownload;
+import com.example.myokdownload.dowload.core.IdentifiedTask;
 import com.example.myokdownload.dowload.core.NamedRunnable;
 import com.example.myokdownload.dowload.core.Util;
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
@@ -19,6 +20,7 @@ import com.example.myokdownload.dowload.core.file.ProcessFileStrategy;
 import com.example.myokdownload.dowload.core.log.LogUtil;
 import com.example.myokdownload.dowload.core.thread.ThreadUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +32,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class DownloadCall extends NamedRunnable {
+public class DownloadCall extends NamedRunnable implements Comparable<DownloadCall> {
     private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
             60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
             ThreadUtil.threadFactory("OkDownload Block", false));
@@ -311,5 +313,56 @@ public class DownloadCall extends NamedRunnable {
 
     public boolean equalsTask(@NonNull DownloadTask task) {
         return this.task.equals(task);
+    }
+
+    @Nullable public File getFile() {
+        return this.task.getFile();
+    }
+
+    // this method is convenient for unit-test.
+    int getPriority() {
+        return task.getPriority();
+    }
+
+    @Override
+    public int compareTo(DownloadCall o) {
+        return o.getPriority() - getPriority();
+    }
+
+    public boolean cancel() {
+        synchronized (this) {
+            if (canceled) return false;
+            if (finishing) return false;
+            this.canceled = true;
+        }
+
+        final long startCancelTime = SystemClock.uptimeMillis();
+
+        OKDownload.with().downloadDispatcher.flyingCanceled(this);
+
+        final DownloadCache cache = this.cache;
+        if (cache != null) cache.setUserCanceled();
+
+        final Object[] chains = blockChainList.toArray();
+        if (chains == null || chains.length == 0) {
+            if (currentThread != null) {
+                LogUtil.d(TAG,
+                        "interrupt thread with cancel operation because of chains are not running "
+                                + task.getId());
+                currentThread.interrupt();
+            }
+        } else {
+            for (Object chain : chains) {
+                if (chain instanceof DownloadChain) {
+                    ((DownloadChain) chain).cancel();
+                }
+            }
+        }
+
+        if (cache != null) cache.getOutputStream().cancelAsync();
+
+        LogUtil.d(TAG, "cancel task " + task.getId() + " consume: " + (SystemClock
+                .uptimeMillis() - startCancelTime) + "ms");
+        return true;
     }
 }

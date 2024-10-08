@@ -14,6 +14,7 @@ import com.example.myokdownload.dowload.core.Util;
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
 import com.example.myokdownload.dowload.core.breakpoint.DownloadStore;
+import com.example.myokdownload.dowload.core.cause.EndCause;
 import com.example.myokdownload.dowload.core.exception.PreAllocateException;
 import com.example.myokdownload.dowload.core.log.LogUtil;
 import com.example.myokdownload.dowload.core.thread.ThreadUtil;
@@ -214,6 +215,50 @@ public class MultiPointOutputStream {
 
     public void setRequireStreamBlocks(List<Integer> requireStreamBlocks) {
         this.requireStreamBlocks = requireStreamBlocks;
+    }
+
+    public void cancelAsync() {
+        FILE_IO_EXECUTOR.execute(new Runnable() {
+            @Override public void run() {
+                cancel();
+            }
+        });
+    }
+
+    public synchronized void cancel() {
+        if (requireStreamBlocks == null) return;
+        if (canceled) return;
+        canceled = true;
+        // must ensure sync thread is finished, then can invoke 'ensureSync(true, -1)'
+        // in try block, otherwise, try block will be blocked in 'ensureSync(true, -1)' and
+        // codes in finally block will not be invoked
+        noMoreStreamList.addAll(requireStreamBlocks);
+        try {
+            if (allNoSyncLength.get() <= 0) return;
+            if (syncFuture != null && !syncFuture.isDone()) {
+                inspectValidPath();
+                OKDownload.with().processFileStrategy.getFileLock().increaseLock(path);
+                try {
+                    ensureSync(true, -1);
+                } finally {
+                    OKDownload.with().processFileStrategy.getFileLock().decreaseLock(path);
+                }
+            }
+        } finally {
+            for (Integer blockIndex: requireStreamBlocks) {
+                try {
+                    close(blockIndex);
+                } catch (IOException e) {
+                    LogUtil.d(TAG, "OutputStream close failed task[" + task.getId()
+                            + "] block[" + blockIndex + "]" + e);
+                }
+            }
+            store.onTaskEnd(task.getId(), EndCause.CANCELED, null);
+        }
+    }
+
+    private void inspectValidPath() {
+        if (path == null && task.getFile() != null) path = task.getFile().getAbsolutePath();
     }
 
     public void inspectComplete(int blockIndex) throws IOException {

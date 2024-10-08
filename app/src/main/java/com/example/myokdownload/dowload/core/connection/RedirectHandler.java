@@ -2,9 +2,8 @@ package com.example.myokdownload.dowload.core.connection;
 
 import androidx.annotation.Nullable;
 
-import com.example.myokdownload.RedirectUtil;
+import com.example.myokdownload.dowload.RedirectUtil;
 import com.example.myokdownload.dowload.IRedirectHandler;
-import com.example.myokdownload.dowload.core.Util;
 
 import java.io.IOException;
 import java.net.ProtocolException;
