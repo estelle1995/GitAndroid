@@ -45,6 +45,6 @@ public class KeyToIdMap {
     }
 
     String generateKey(@NonNull DownloadTask task) {
-        return task.getUrl() + task.uri + task.getFilename();
+        return task.getUrl() + task.getUri() + task.getFilename();
     }
 }

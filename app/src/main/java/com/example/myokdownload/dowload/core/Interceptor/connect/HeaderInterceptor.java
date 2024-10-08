@@ -38,7 +38,7 @@ public class HeaderInterceptor implements Interceptor.Connect {
         final DownloadTask task = chain.getTask();
 
         // add user customize header
-        final Map<String, List<String>> userHeader = task.headerMapFields;
+        final Map<String, List<String>> userHeader = task.getHeaderMapFields();
         if (userHeader != null) ConnectionUtil.addUserRequestHeaderField(userHeader, connection);
         if (userHeader == null || !userHeader.containsKey(USER_AGENT)) {
             ConnectionUtil.addDefaultUserAgent(connection);

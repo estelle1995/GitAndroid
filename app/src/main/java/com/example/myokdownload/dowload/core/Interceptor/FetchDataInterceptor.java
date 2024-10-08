@@ -24,7 +24,7 @@ public class FetchDataInterceptor implements Interceptor.Fetch {
     public FetchDataInterceptor(int blockIndex, @NonNull InputStream inputStream, @NonNull MultiPointOutputStream outputStream, DownloadTask task) {
         this.blockIndex = blockIndex;
         this.inputStream = inputStream;
-        this.readBuffer = new byte[task.readBufferSize];
+        this.readBuffer = new byte[task.getReadBufferSize()];
         this.outputStream = outputStream;
 
         this.task = task;

@@ -1,7 +1,24 @@
+/*
+ * Copyright (c) 2017 LingoChamp Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.example.myokdownload.dowload;
 
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.SparseArray;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -20,35 +37,65 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A DownloadTask is just for download one file from one url, you can customize its profile through
+ * {@link Builder} and store temporary data through {@link #setTag(Object)} or
+ * {@link #addTag(int, Object)}, also you can get state or its breakpoint data from
+ * {@link OKDownload#breakpointStore()} with {@link #getId()}, and it's very welcome to use
+ * {@link StatusUtil} to help you more convenient to get its status stored on database with task's
+ * {@link #getId()}.
+ */
 public class DownloadTask extends IdentifiedTask implements Comparable<DownloadTask> {
-    int id;
-    String url;
-    public Uri uri;
-    public Map<String, List<String>> headerMapFields;
+    private final int id;
+    @NonNull
+    private final String url;
+    private final Uri uri;
+    private final Map<String, List<String>> headerMapFields;
 
+    @Nullable
+    private BreakpointInfo info;
+    /**
+     * This value more larger the priority more high.
+     */
     private final int priority;
 
-    public boolean autoCallbackToUIThread;
-    public DownloadListener listener;
-    public AtomicLong lastCallbackProcessTimestamp;
-    public int minIntervalMillisCallbackProcess;
-    BreakpointInfo info;
-    public DownloadStrategy.FilenameHolder filenameHolder;
-    File providedPathFile;
-    File directoryFile;
-    public Integer connectionCount;
-    public int readBufferSize;
+    // optimize ------------------
+    // no progress callback
+    // no request callback
+    // no response callback
+
+    private final int readBufferSize;
+    private final int flushBufferSize;
+
+    private final int syncBufferSize;
+    private final int syncBufferIntervalMills;
+
+    @Nullable private final Integer connectionCount;
+    @Nullable private final Boolean isPreAllocateLength;
+
+    /**
+     * if this task has already completed with
+     */
     private final boolean passIfAlreadyCompleted;
 
-    public int flushBufferSize;
-    public int syncBufferSize;
-    public int syncBufferIntervalMills;
-    @Nullable private File targetFile;
-    public @Nullable Boolean isPreAllocateLength;
-    public boolean wifiRequired;
+    private final boolean autoCallbackToUIThread;
+    private final int minIntervalMillisCallbackProcess;
+    // end optimize ------------------
 
-    public String redirectLocation;
-    public boolean filenameFromResponse;
+    private volatile DownloadListener listener;
+    private volatile SparseArray<Object> keyTagMap;
+    private Object tag;
+    private final boolean wifiRequired;
+
+    private final AtomicLong lastCallbackProcessTimestamp;
+    private final boolean filenameFromResponse;
+
+    @NonNull private final DownloadStrategy.FilenameHolder filenameHolder;
+    @NonNull private final File providedPathFile;
+    @NonNull private final File directoryFile;
+
+    @Nullable private File targetFile;
+    @Nullable private String redirectLocation;
 
     public DownloadTask(String url, Uri uri, int priority, int readBufferSize, int flushBufferSize,
                         int syncBufferSize, int syncBufferIntervalMills,
@@ -154,26 +201,116 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
         this.id = OKDownload.with().breakpointStore().findOrCreateId(this);
     }
 
+    /**
+     * Whether the filename is from response rather than provided by user directly.
+     *
+     * @return {@code true} is the filename will assigned from response header.
+     */
+    public boolean isFilenameFromResponse() {
+        return filenameFromResponse;
+    }
+
+    /**
+     * Get you custom request header map files for this task.
+     *
+     * @return you custom request header map files for this task. {@code null} if you isn't add any
+     * header fields for this task.
+     * @see Builder#addHeader(String, String)
+     * @see Builder#setHeaderMapFields(Map)
+     */
+    @Nullable
+    public Map<String, List<String>> getHeaderMapFields() {
+        return this.headerMapFields;
+    }
+
+    @Override public int getId() {
+        return this.id;
+    }
+
+    /**
+     * Get the filename of the file to store download data.
+     *
+     * @return the filename of the file to store download data. {@code null} if you not provided it
+     * and okdownload isn't get response yet.
+     */
+    @Nullable public String getFilename() {
+        return filenameHolder.get();
+    }
+
+    /**
+     * Whether pass this task with completed callback directly if this task has already completed.
+     *
+     * @return {@code true} pass this task with completed callback directly if this task has already
+     * completed.
+     */
     public boolean isPassIfAlreadyCompleted() {
         return passIfAlreadyCompleted;
     }
 
-    @Override
-    public int getId() {
-        return id;
+    /**
+     * Whether wifi required for proceed this task.
+     *
+     * @return {@code true} if this task only can download on the Wifi network type.
+     */
+    public boolean isWifiRequired() {
+        return wifiRequired;
     }
 
-    @Nullable public BreakpointInfo getInfo() {
-        if (info == null) info = OKDownload.with().breakpointStore().get(id);
-        return info;
+    public DownloadStrategy.FilenameHolder getFilenameHolder() {
+        return filenameHolder;
     }
 
-    @NonNull
-    @Override
-    public String getUrl() {
+    /**
+     * Get the uri to store download data.
+     *
+     * @return the uri to store download data.
+     */
+    public Uri getUri() {
+        return uri;
+    }
+
+    /**
+     * Get the url for this task.
+     *
+     * @return the url for this task.
+     */
+    @NonNull public String getUrl() {
         return url;
     }
 
+    public void setRedirectLocation(@Nullable String redirectUrl) {
+        this.redirectLocation = redirectUrl;
+    }
+
+    @Nullable
+    public String getRedirectLocation() {
+        return redirectLocation;
+    }
+
+    @NonNull @Override protected File getProvidedPathFile() {
+        return this.providedPathFile;
+    }
+
+    /**
+     * Get the parent path of the file store downloaded data.
+     * <p>
+     * If the scheme of Uri isn't 'file' this value would be just a signal, not means real
+     * parent-file.
+     *
+     * @return the parent path of the file store downloaded data.
+     */
+    @Override @NonNull public File getParentFile() {
+        return directoryFile;
+    }
+
+    /**
+     * Get the file which is used for storing downloaded data.
+     * <p>
+     * If the scheme of Uri isn't 'file' this value would be just a signal, not means real file.
+     *
+     * @return the path of file store downloaded data. {@code null} is there isn't filename found
+     * yet for the file of this task.
+     */
     @Nullable public File getFile() {
         final String filename = filenameHolder.get();
         if (filename == null) return null;
@@ -182,57 +319,191 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
         return targetFile;
     }
 
-    @NonNull
-    @Override
-    protected File getProvidedPathFile() {
-        return providedPathFile;
+    /**
+     * Get the bytes of buffer once read from response input-stream.
+     *
+     * @return the bytes of buffer once read from response input-stream.
+     */
+    public int getReadBufferSize() {
+        return this.readBufferSize;
     }
 
-    @NonNull
-    @Override
-    public File getParentFile() {
-        return directoryFile;
+    /**
+     * Get the bytes of the buffer size on BufferedOutputStream.
+     *
+     * @return the bytes of the buffer size on BufferedOutputStream.
+     */
+    public int getFlushBufferSize() {
+        return this.flushBufferSize;
     }
 
-    @Nullable
-    @Override
-    public String getFilename() {
-        return filenameHolder.get();
+    /**
+     * Get the bytes of the buffer size before sync to the disk.
+     *
+     * @return the bytes of the buffer size before sync to the disk.
+     */
+    public int getSyncBufferSize() {
+        return syncBufferSize;
     }
 
-    @Override public boolean equals(Object obj) {
-        if (super.equals(obj)) return true;
+    /**
+     * Get the interval milliseconds of the sync buffer.
+     *
+     * @return the interval milliseconds of the sync buffer.
+     */
+    public int getSyncBufferIntervalMills() {
+        return syncBufferIntervalMills;
+    }
 
-        if (obj instanceof DownloadTask) {
-            final DownloadTask another = (DownloadTask) obj;
-            if (another.id == this.id) return true;
-            return compareIgnoreId(another);
+    /**
+     * Whether all callbacks callback to the UI thread automatically.
+     *
+     * @return {@code true} if all callbacks callback to the UI thread automatically.
+     */
+    public boolean isAutoCallbackToUIThread() {
+        return autoCallbackToUIThread;
+    }
+
+    /**
+     * Get the minimum interval milliseconds of progress callbacks.
+     *
+     * @return minimum interval milliseconds of progress callbacks.
+     */
+    public int getMinIntervalMillisCallbackProcess() {
+        return minIntervalMillisCallbackProcess;
+    }
+
+    /**
+     * Get the connection count you have been set through {@link Builder#setConnectionCount(int)}
+     *
+     * @return the connection count you set.
+     */
+    @Nullable public Integer getSetConnectionCount() {
+        return connectionCount;
+    }
+
+    /**
+     * Get whether need to pre-allocate length for the file to it's instant-length from trial
+     * connection you set through {@link Builder#setPreAllocateLength(boolean)}.
+     *
+     * @return whether need to pre-allocate length you set.
+     */
+    @Nullable public Boolean getSetPreAllocateLength() {
+        return isPreAllocateLength;
+    }
+
+    /**
+     * Get the connection count is effect on this task.
+     *
+     * @return the connection count.
+     */
+    public int getConnectionCount() {
+        if (info == null) return 0;
+        return info.getBlockCount();
+    }
+
+    /**
+     * Get the tag with its {@code key}, which you set through {@link #addTag(int, Object)}.
+     *
+     * @param key the key is identify the tag.
+     * @return the tag with the {@code key}.
+     */
+    public Object getTag(int key) {
+        return keyTagMap == null ? null : keyTagMap.get(key);
+    }
+
+    /**
+     * Get the tag save on this task object reference through {@link #setTag(Object)}.
+     *
+     * @return the tag you set through {@link #setTag(Object)}
+     */
+    public Object getTag() {
+        return tag;
+    }
+
+    /**
+     * Get the breakpoint info of this task.
+     *
+     * @return {@code null} Only if there isn't any info for this task yet, otherwise you can get
+     * the info for the task.
+     */
+    @Nullable public BreakpointInfo getInfo() {
+        if (info == null) info = OKDownload.with().breakpointStore().get(id);
+        return info;
+    }
+
+    long getLastCallbackProcessTs() {
+        return lastCallbackProcessTimestamp.get();
+    }
+
+    void setLastCallbackProcessTs(long lastCallbackProcessTimestamp) {
+        this.lastCallbackProcessTimestamp.set(lastCallbackProcessTimestamp);
+    }
+
+    void setBreakpointInfo(@NonNull BreakpointInfo info) {
+        this.info = info;
+    }
+
+    /**
+     * Add the {@code tag} identify with the {@code key} you can use it through {@link #getTag(int)}
+     *
+     * @param key   the identify of the tag.
+     * @param value the value of the tag.
+     */
+    public synchronized DownloadTask addTag(int key, Object value) {
+        if (keyTagMap == null) {
+            synchronized (this) {
+                if (keyTagMap == null) keyTagMap = new SparseArray<>();
+            }
         }
 
-        return false;
+        keyTagMap.put(key, value);
+        return this;
     }
 
-    public int getPriority() {
-        return priority;
+    /**
+     * Remove the tag with the {@code key} what you set through {@link #addTag(int, Object)}.
+     *
+     * @param key the key of the tag.
+     */
+    public synchronized void removeTag(int key) {
+        if (keyTagMap != null) keyTagMap.remove(key);
     }
 
-    public boolean isFilenameFromResponse() {
-        return filenameFromResponse;
+    /**
+     * Remove the tag you set through {@link #setTag(Object)}.
+     */
+    public synchronized void removeTag() {
+        this.tag = null;
     }
 
-    @NonNull public MockTaskForCompare mock(int id) {
-        return new MockTaskForCompare(id, this);
+    /**
+     * Set tag to this task, which you can use it through {@link #getTag()}.
+     *
+     * @param tag the tag will be store on this task reference.
+     */
+    public void setTag(Object tag) {
+        this.tag = tag;
     }
 
-    public static MockTaskForCompare mockTaskForCompare(int id) {
-        return new MockTaskForCompare(id);
-    }
-
-    public void enqueue(DownloadListener listener) {
+    /**
+     * Replace the origin listener on this task reference.
+     *
+     * @param listener the new listener for this task reference.
+     */
+    public void replaceListener(@NonNull DownloadListener listener) {
         this.listener = listener;
-        OKDownload.with().downloadDispatcher().enqueue(this);
     }
 
+    /**
+     * Enqueue a bunch of {@code tasks} with the listener to the downloader dispatcher.
+     * <p>
+     * This operation is specially optimize for handle tasks instead of single task.
+     *
+     * @param tasks    the tasks will be executed when resources is available on the dispatcher
+     *                 thread-pool.
+     * @param listener the listener is used for listen each {@code tasks} lifecycle.
+     */
     public static void enqueue(DownloadTask[] tasks, DownloadListener listener) {
         for (DownloadTask task : tasks) {
             task.listener = listener;
@@ -240,43 +511,114 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
         OKDownload.with().downloadDispatcher().enqueue(tasks);
     }
 
-    public void cancel() {
-        OKDownload.with().downloadDispatcher().cancel(this);
+    /**
+     * Enqueue the task with the {@code listener} to the downloader dispatcher, what means it will
+     * be run when resource is available and on the dispatcher thread pool.
+     * <p>
+     * If there are more than one task need to enqueue please using
+     * {@link #enqueue(DownloadTask[], DownloadListener)} instead, because the performance is
+     * optimized to handle bunch of tasks enqueue.
+     *
+     * @param listener the listener is used for listen the whole lifecycle of the task.
+     */
+    public void enqueue(DownloadListener listener) {
+        this.listener = listener;
+        OKDownload.with().downloadDispatcher().enqueue(this);
     }
 
-    public static void cancel(DownloadTask[] tasks) {
-        OKDownload.with().downloadDispatcher().cancel(tasks);
-    }
-
+    /**
+     * Execute the task with the {@code listener} on the invoke thread.
+     *
+     * @param listener the listener is used for listen the whole lifecycle of the task.
+     */
     public void execute(DownloadListener listener) {
         this.listener = listener;
         OKDownload.with().downloadDispatcher().execute(this);
     }
 
-    @Override public int hashCode() {
-        return (url + providedPathFile.toString() + filenameHolder.get()).hashCode();
+    /**
+     * Cancel the current task, if there is another same id task, it would be canceled too.
+     * <p>
+     * If the task is canceled all resourced about this task will be recycled.
+     * <p>
+     * If there are more than one task need to cancel, please using {@link #cancel(DownloadTask[])}
+     * instead, because the performance is optimized to handle bunch of tasks cancel.
+     */
+    public void cancel() {
+        OKDownload.with().downloadDispatcher().cancel(this);
     }
 
-    @Override
-    public int compareTo(DownloadTask o) {
+    /**
+     * Cancel a bunch of {@code tasks} or with the same ids tasks.
+     * <p>
+     * This operation is specially optimize for handle tasks instead of single task.
+     *
+     * @param tasks will be canceled with high effective.
+     */
+    public static void cancel(DownloadTask[] tasks) {
+        OKDownload.with().downloadDispatcher().cancel(tasks);
+    }
+
+    /**
+     * Get the listener of the task.
+     *
+     * @return the listener is used for listen the whole lifecycle of the task.
+     */
+    public DownloadListener getListener() {
+        return this.listener;
+    }
+
+    /**
+     * The priority of the task, more larger means less time waiting to download.
+     *
+     * @return the priority of the task.
+     */
+    public int getPriority() {
+        return priority;
+    }
+
+    public Builder toBuilder(String anotherUrl, Uri anotherUri) {
+        final Builder builder = new Builder(anotherUrl, anotherUri)
+                .setPriority(priority)
+                .setReadBufferSize(readBufferSize)
+                .setFlushBufferSize(flushBufferSize)
+                .setSyncBufferSize(syncBufferSize)
+                .setSyncBufferIntervalMillis(syncBufferIntervalMills)
+                .setAutoCallbackToUIThread(autoCallbackToUIThread)
+                .setMinIntervalMillisCallbackProcess(minIntervalMillisCallbackProcess)
+                .setHeaderMapFields(headerMapFields)
+                .setPassIfAlreadyCompleted(passIfAlreadyCompleted);
+
+        // check whether the filename is special set from method.
+        if (Util.isUriFileScheme(anotherUri) // only if another uri is file-scheme
+                && !new File(anotherUri.getPath()).isFile() // another uri is not file already
+                && Util.isUriFileScheme(uri) // only if uri is file-scheme
+                // only if filename is provided and not provided through uri
+                && filenameHolder.get() != null
+                && !new File(uri.getPath()).getName().equals(filenameHolder.get())
+                ) {
+            builder.setFilename(filenameHolder.get());
+        }
+
+        return builder;
+    }
+
+    public Builder toBuilder() {
+        return toBuilder(this.url, this.uri);
+    }
+
+    /**
+     * Copy tags from another task.
+     *
+     * @param oldTask the task will provide its tags
+     */
+    public void setTags(DownloadTask oldTask) {
+        this.tag = oldTask.tag;
+        this.keyTagMap = oldTask.keyTagMap;
+    }
+
+    @Override public int compareTo(@NonNull DownloadTask o) {
         return o.getPriority() - getPriority();
-    }
-
-
-    public static class TaskHideWrapper {
-        public static long getLastCallbackProcessTs(DownloadTask task) {
-            return task.lastCallbackProcessTimestamp.get();
-        }
-
-        public static void setLastCallbackProcessTs(DownloadTask task,
-                                                    long lastCallbackProcessTimestamp) {
-            task.lastCallbackProcessTimestamp.set(lastCallbackProcessTimestamp);
-        }
-
-        public static void setBreakpointInfo(@NonNull DownloadTask task,
-                                             @NonNull BreakpointInfo info) {
-            task.info = info;
-        }
     }
 
     /**
@@ -577,6 +919,56 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
                     autoCallbackToUIThread, minIntervalMillisCallbackProcess,
                     headerMapFields, filename, passIfAlreadyCompleted, isWifiRequired,
                     isFilenameFromResponse, connectionCount, isPreAllocateLength);
+        }
+    }
+
+    @Override public boolean equals(Object obj) {
+        if (super.equals(obj)) return true;
+
+        if (obj instanceof DownloadTask) {
+            final DownloadTask another = (DownloadTask) obj;
+            if (another.id == this.id) return true;
+            return compareIgnoreId(another);
+        }
+
+        return false;
+    }
+
+    @Override public int hashCode() {
+        return (url + providedPathFile.toString() + filenameHolder.get()).hashCode();
+    }
+
+    @Override public String toString() {
+        return super.toString() + "@" + id + "@" + url + "@" + directoryFile.toString()
+                + "/" + filenameHolder.get();
+    }
+
+    /**
+     * Create a Identified task only for compare with their id, and only the id is the same.
+     *
+     * @param id the id is set for this mock task.
+     */
+    public static MockTaskForCompare mockTaskForCompare(int id) {
+        return new MockTaskForCompare(id);
+    }
+
+    @NonNull public MockTaskForCompare mock(int id) {
+        return new MockTaskForCompare(id, this);
+    }
+
+    public static class TaskHideWrapper {
+        public static long getLastCallbackProcessTs(DownloadTask task) {
+            return task.getLastCallbackProcessTs();
+        }
+
+        public static void setLastCallbackProcessTs(DownloadTask task,
+                                                    long lastCallbackProcessTimestamp) {
+            task.setLastCallbackProcessTs(lastCallbackProcessTimestamp);
+        }
+
+        public static void setBreakpointInfo(@NonNull DownloadTask task,
+                                             @NonNull BreakpointInfo info) {
+            task.setBreakpointInfo(info);
         }
     }
 

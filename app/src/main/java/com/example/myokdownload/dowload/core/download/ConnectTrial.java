@@ -66,7 +66,7 @@ public class ConnectTrial {
                 connection.addHeader(IF_MATCH, info.etag);
             }
             connection.addHeader(RANGE, "bytes=0-0");
-            final Map<String, List<String>> userHeader = task.headerMapFields;
+            final Map<String, List<String>> userHeader = task.getHeaderMapFields();
             if (userHeader != null) ConnectionUtil.addRequestHeaderFields(userHeader, connection);
 
             final DownloadListener listener = OKDownload.with().callbackDispatcher().dispatch();
@@ -74,9 +74,9 @@ public class ConnectTrial {
             listener.connectTrialStart(task, requestProperties);
 
             final DownloadConnection.Connected connected = connection.execute();
-            task.redirectLocation = connected.getRedirectLocation();
+            task.setRedirectLocation(connected.getRedirectLocation());
             LogUtil.d(TAG, "task[" + task.getId() + "] redirect location: "
-                    + task.redirectLocation);
+                    + task.getRedirectLocation());
 
             this.responseCode = connected.getResponseCode();
             this.acceptRange = isAcceptRange(connected);
@@ -129,7 +129,7 @@ public class ConnectTrial {
 
         try {
             connection.setRequestMethod(METHOD_HEAD);
-            final Map<String, List<String>> userHeader = task.headerMapFields;
+            final Map<String, List<String>> userHeader = task.getHeaderMapFields();
             if (userHeader != null)  ConnectionUtil.addUserRequestHeaderField(userHeader, connection);
 
             listener.connectTrialStart(task, connection.getRequestProperties());

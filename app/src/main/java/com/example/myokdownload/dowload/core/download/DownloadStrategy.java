@@ -85,10 +85,20 @@ public class DownloadStrategy {
     }
 
     public int determineBlockCount(@NonNull DownloadTask task, long totalLength) {
-        if (task.connectionCount != null) return task.connectionCount;
-        if (totalLength < ONE_CONNECTION_UPPER_LIMIT) return 1;
-        if (totalLength < TWO_CONNECTION_UPPER_LIMIT) return 2;
-        if (totalLength < THREE_CONNECTION_UPPER_LIMIT) return 3;
+        if (task.getSetConnectionCount() != null) return task.getSetConnectionCount();
+
+        if (totalLength < ONE_CONNECTION_UPPER_LIMIT) {
+            return 1;
+        }
+
+        if (totalLength < TWO_CONNECTION_UPPER_LIMIT) {
+            return 2;
+        }
+
+        if (totalLength < THREE_CONNECTION_UPPER_LIMIT) {
+            return 3;
+        }
+
         if (totalLength < FOUR_CONNECTION_UPPER_LIMIT) {
             return 4;
         }
@@ -101,7 +111,7 @@ public class DownloadStrategy {
                 .getResponseFilename(task.getUrl());
         if (filename == null) return false;
 
-        task.filenameHolder.set(filename);
+        task.getFilenameHolder().set(filename);
         return true;
     }
 
@@ -110,8 +120,8 @@ public class DownloadStrategy {
         if (info == null) {
             info = new BreakpointInfo(task.getId(), task.getUrl(), task.getParentFile(), task.getFilename());
             final long size;
-            if (Util.isUriContentScheme(task.uri)) {
-                size = Util.getSizeFromContentUri(task.uri);
+            if (Util.isUriContentScheme(task.getUri())) {
+                size = Util.getSizeFromContentUri(task.getUri());
             } else {
                 final File file = task.getFile();
                 if (file == null) {
@@ -129,7 +139,7 @@ public class DownloadStrategy {
 
     public boolean inspectAnotherSameInfo(@NonNull DownloadTask task, @NonNull BreakpointInfo info,
                                           long instanceLength) {
-        if (!task.filenameFromResponse) return false;
+        if (!task.isFilenameFromResponse()) return false;
         final BreakpointStore store = OKDownload.with().breakpointStore();
         final BreakpointInfo anotherInfo = store.findAnotherInfoFromCompare(task, info);
         if (anotherInfo == null) return false;
@@ -182,7 +192,7 @@ public class DownloadStrategy {
             isHasAccessNetworkStatePermission = ConnectionUtil.checkPermission(Manifest.permission.ACCESS_NETWORK_STATE);
         }
 
-        if (!task.wifiRequired) return;
+        if (!task.isWifiRequired()) return;
 
         if (!isHasAccessNetworkStatePermission) {
             throw new IOException("required for access network state but don't have the "
@@ -207,7 +217,7 @@ public class DownloadStrategy {
             if (TextUtils.isEmpty(task.getFilename())) {
                 synchronized (task) {
                     if (TextUtils.isEmpty(task.getFilename())) {
-                        task.filenameHolder.set(filename);
+                        task.getFilenameHolder().set(filename);
                         info.filenameHolder.set(filename);
                     }
                 }

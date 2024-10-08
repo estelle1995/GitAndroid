@@ -68,7 +68,7 @@ public class BreakpointLocalCheck {
     }
 
     public boolean isFileExistToResume() {
-        final Uri uri = task.uri;
+        final Uri uri = task.getUri();
         if (Util.isUriContentScheme(uri)) {
             return Util.getSizeFromContentUri(uri) > 0;
         } else {

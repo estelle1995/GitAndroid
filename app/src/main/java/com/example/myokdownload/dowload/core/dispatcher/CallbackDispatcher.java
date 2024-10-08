@@ -41,7 +41,7 @@ public class CallbackDispatcher {
     }
 
     public boolean isFetchProcessMoment(DownloadTask task) {
-        final long minInterval = task.minIntervalMillisCallbackProcess;
+        final long minInterval = task.getMinIntervalMillisCallbackProcess();
         final long now = SystemClock.uptimeMillis();
         return minInterval <= 0 || now - DownloadTask.TaskHideWrapper.getLastCallbackProcessTs(task) >= minInterval;
     }
@@ -56,8 +56,8 @@ public class CallbackDispatcher {
         final Iterator<DownloadTask> iterator = errorCollection.iterator();
         while (iterator.hasNext()) {
             final DownloadTask task = iterator.next();
-            if (!task.autoCallbackToUIThread) {
-                task.listener.taskEnd(task, EndCause.ERROR, realCause);
+            if (!task.isAutoCallbackToUIThread()) {
+                task.getListener().taskEnd(task, EndCause.ERROR, realCause);
                 iterator.remove();
             }
         }
@@ -65,7 +65,7 @@ public class CallbackDispatcher {
         uiHandler.post(new Runnable() {
             @Override public void run() {
                 for (DownloadTask task : errorCollection) {
-                    task.listener.taskEnd(task, EndCause.ERROR, realCause);
+                    task.getListener().taskEnd(task, EndCause.ERROR, realCause);
                 }
             }
         });
@@ -74,8 +74,8 @@ public class CallbackDispatcher {
     public void endTasks(@NonNull final Collection<DownloadTask> completedTaskCollection,
                          @NonNull final Collection<DownloadTask> sameTaskConflictCollection,
                          @NonNull final Collection<DownloadTask> fileBusyCollection) {
-        if (completedTaskCollection.size() == 0 && sameTaskConflictCollection.size() == 0
-                && fileBusyCollection.size() == 0) {
+        if (completedTaskCollection.isEmpty() && sameTaskConflictCollection.isEmpty()
+                && fileBusyCollection.isEmpty()) {
             return;
         }
 
@@ -83,24 +83,24 @@ public class CallbackDispatcher {
                 + "] sameTask[" + sameTaskConflictCollection.size()
                 + "] fileBusy[" + fileBusyCollection.size() + "]");
 
-        if (completedTaskCollection.size() > 0) {
+        if (!completedTaskCollection.isEmpty()) {
             final Iterator<DownloadTask> iterator = completedTaskCollection.iterator();
             while (iterator.hasNext()) {
                 final DownloadTask task = iterator.next();
-                if (!task.autoCallbackToUIThread) {
-                    task.listener.taskEnd(task, EndCause.COMPLETED, null);
+                if (!task.isAutoCallbackToUIThread()) {
+                    task.getListener().taskEnd(task, EndCause.COMPLETED, null);
                     iterator.remove();
                 }
             }
         }
 
 
-        if (sameTaskConflictCollection.size() > 0) {
+        if (!sameTaskConflictCollection.isEmpty()) {
             final Iterator<DownloadTask> iterator = sameTaskConflictCollection.iterator();
             while (iterator.hasNext()) {
                 final DownloadTask task = iterator.next();
-                if (!task.autoCallbackToUIThread) {
-                    task.listener.taskEnd(task, EndCause.SAME_TASK_BUSY, null);
+                if (!task.isAutoCallbackToUIThread()) {
+                    task.getListener().taskEnd(task, EndCause.SAME_TASK_BUSY, null);
                     iterator.remove();
                 }
             }
@@ -110,8 +110,8 @@ public class CallbackDispatcher {
             final Iterator<DownloadTask> iterator = fileBusyCollection.iterator();
             while (iterator.hasNext()) {
                 final DownloadTask task = iterator.next();
-                if (!task.autoCallbackToUIThread) {
-                    task.listener.taskEnd(task, EndCause.FILE_BUSY, null);
+                if (!task.isAutoCallbackToUIThread()) {
+                    task.getListener().taskEnd(task, EndCause.FILE_BUSY, null);
                     iterator.remove();
                 }
             }
@@ -125,13 +125,13 @@ public class CallbackDispatcher {
         uiHandler.post(new Runnable() {
             @Override public void run() {
                 for (DownloadTask task : completedTaskCollection) {
-                    task.listener.taskEnd(task, EndCause.COMPLETED, null);
+                    task.getListener().taskEnd(task, EndCause.COMPLETED, null);
                 }
                 for (DownloadTask task : sameTaskConflictCollection) {
-                    task.listener.taskEnd(task, EndCause.SAME_TASK_BUSY, null);
+                    task.getListener().taskEnd(task, EndCause.SAME_TASK_BUSY, null);
                 }
                 for (DownloadTask task : fileBusyCollection) {
-                    task.listener.taskEnd(task, EndCause.FILE_BUSY, null);
+                    task.getListener().taskEnd(task, EndCause.FILE_BUSY, null);
                 }
             }
         });
@@ -145,8 +145,8 @@ public class CallbackDispatcher {
         final Iterator<DownloadTask> iterator = canceledCollection.iterator();
         while (iterator.hasNext()) {
             final DownloadTask task = iterator.next();
-            if (!task.autoCallbackToUIThread) {
-                task.listener.taskEnd(task, EndCause.CANCELED, null);
+            if (!task.isAutoCallbackToUIThread()) {
+                task.getListener().taskEnd(task, EndCause.CANCELED, null);
                 iterator.remove();
             }
         }
@@ -154,7 +154,7 @@ public class CallbackDispatcher {
         uiHandler.post(new Runnable() {
             @Override public void run() {
                 for (DownloadTask task : canceledCollection) {
-                    task.listener.taskEnd(task, EndCause.CANCELED, null);
+                    task.getListener().taskEnd(task, EndCause.CANCELED, null);
                 }
             }
         });
@@ -175,28 +175,28 @@ public class CallbackDispatcher {
         public void taskStart(@NonNull DownloadTask task) {
             LogUtil.d(TAG, "taskStart: " + task.getId());
             inspectTaskStart(task);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.taskStart(task);
+                        task.getListener().taskStart(task);
                     }
                 });
             } else {
-                task.listener.taskStart(task);
+                task.getListener().taskStart(task);
             }
         }
 
         @Override
         public void connectTrialStart(@NonNull DownloadTask task, @NonNull Map<String, List<String>> requestHeaderFields) {
             LogUtil.d(TAG, "-----> start trial task(" + task.getId() + ") " + requestHeaderFields);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.connectTrialStart(task, requestHeaderFields);
+                        task.getListener().connectTrialStart(task, requestHeaderFields);
                     }
                 });
             } else {
-                task.listener.connectTrialStart(task, requestHeaderFields);
+                task.getListener().connectTrialStart(task, requestHeaderFields);
             }
         }
 
@@ -204,15 +204,15 @@ public class CallbackDispatcher {
         public void connectTrialEnd(@NonNull DownloadTask task, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields) {
             LogUtil.d(TAG, "<----- finish trial task(" + task.getId()
                     + ") code[" + responseCode + "]" + responseHeaderFields);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener
+                        task.getListener()
                                 .connectTrialEnd(task, responseCode, responseHeaderFields);
                     }
                 });
             } else {
-                task.listener
+                task.getListener()
                         .connectTrialEnd(task, responseCode, responseHeaderFields);
             }
         }
@@ -221,14 +221,14 @@ public class CallbackDispatcher {
         public void downloadFromBeginning(@NonNull DownloadTask task, @NonNull BreakpointInfo info, @NonNull ResumeFailedCause cause) {
             LogUtil.d(TAG, "downloadFromBeginning: " + task.getId());
             inspectDownloadFromBeginning(task, info, cause);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.downloadFromBeginning(task, info, cause);
+                        task.getListener().downloadFromBeginning(task, info, cause);
                     }
                 });
             } else {
-                task.listener.downloadFromBeginning(task, info, cause);
+                task.getListener().downloadFromBeginning(task, info, cause);
             }
         }
 
@@ -236,14 +236,14 @@ public class CallbackDispatcher {
         public void downloadFromBreakpoint(@NonNull DownloadTask task, @NonNull BreakpointInfo info) {
             LogUtil.d(TAG, "downloadFromBreakpoint: " + task.getId());
             inspectDownloadFromBreakpoint(task, info);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.downloadFromBreakpoint(task, info);
+                        task.getListener().downloadFromBreakpoint(task, info);
                     }
                 });
             } else {
-                task.listener.downloadFromBreakpoint(task, info);
+                task.getListener().downloadFromBreakpoint(task, info);
             }
         }
 
@@ -251,14 +251,14 @@ public class CallbackDispatcher {
         public void connectStart(@NonNull DownloadTask task, int blockIndex, @NonNull Map<String, List<String>> requestHeaderFields) {
             LogUtil.d(TAG, "-----> start connection task(" + task.getId()
                     + ") block(" + blockIndex + ") " + requestHeaderFields);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.connectStart(task, blockIndex, requestHeaderFields);
+                        task.getListener().connectStart(task, blockIndex, requestHeaderFields);
                     }
                 });
             } else {
-                task.listener.connectStart(task, blockIndex, requestHeaderFields);
+                task.getListener().connectStart(task, blockIndex, requestHeaderFields);
             }
         }
 
@@ -266,15 +266,15 @@ public class CallbackDispatcher {
         public void connectEnd(@NonNull DownloadTask task, int blockIndex, int responseCode, @NonNull Map<String, List<String>> responseHeaderFields) {
             LogUtil.d(TAG, "<----- finish connection task(" + task.getId() + ") block("
                     + blockIndex + ") code[" + responseCode + "]" + responseHeaderFields);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.connectEnd(task, blockIndex, responseCode,
+                        task.getListener().connectEnd(task, blockIndex, responseCode,
                                responseHeaderFields);
                     }
                 });
             } else {
-                task.listener.connectEnd(task, blockIndex, responseCode,
+                task.getListener().connectEnd(task, blockIndex, responseCode,
                         responseHeaderFields);
             }
         }
@@ -282,46 +282,46 @@ public class CallbackDispatcher {
         @Override
         public void fetchStart(@NonNull DownloadTask task, int blockIndex, long contentLength) {
             LogUtil.d(TAG, "fetchStart: " + task.getId());
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.fetchStart(task, blockIndex, contentLength);
+                        task.getListener().fetchStart(task, blockIndex, contentLength);
                     }
                 });
             } else {
-                task.listener.fetchStart(task, blockIndex, contentLength);
+                task.getListener().fetchStart(task, blockIndex, contentLength);
             }
         }
 
         @Override
         public void fetchProgress(@NonNull DownloadTask task, int blockIndex, long increaseBytes) {
-            if (task.minIntervalMillisCallbackProcess > 0) {
+            if (task.getMinIntervalMillisCallbackProcess() > 0) {
                 DownloadTask.TaskHideWrapper
                         .setLastCallbackProcessTs(task, SystemClock.uptimeMillis());
             }
 
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.fetchProgress(task, blockIndex, increaseBytes);
+                        task.getListener().fetchProgress(task, blockIndex, increaseBytes);
                     }
                 });
             } else {
-                task.listener.fetchProgress(task, blockIndex, increaseBytes);
+                task.getListener().fetchProgress(task, blockIndex, increaseBytes);
             }
         }
 
         @Override
         public void fetchEnd(@NonNull DownloadTask task, int blockIndex, long contentLength) {
             LogUtil.d(TAG, "fetchEnd: " + task.getId());
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.fetchEnd(task, blockIndex, contentLength);
+                        task.getListener().fetchEnd(task, blockIndex, contentLength);
                     }
                 });
             } else {
-                task.listener.fetchEnd(task, blockIndex, contentLength);
+                task.getListener().fetchEnd(task, blockIndex, contentLength);
             }
         }
 
@@ -332,14 +332,14 @@ public class CallbackDispatcher {
                 LogUtil.d(TAG, "taskEnd: " + task.getId() + " " + cause + " " + realCause);
             }
             inspectTaskEnd(task, cause, realCause);
-            if (task.autoCallbackToUIThread) {
+            if (task.isAutoCallbackToUIThread()) {
                 uiHandler.post(new Runnable() {
                     @Override public void run() {
-                        task.listener.taskEnd(task, cause, realCause);
+                        task.getListener().taskEnd(task, cause, realCause);
                     }
                 });
             } else {
-                task.listener.taskEnd(task, cause, realCause);
+                task.getListener().taskEnd(task, cause, realCause);
             }
         }
 

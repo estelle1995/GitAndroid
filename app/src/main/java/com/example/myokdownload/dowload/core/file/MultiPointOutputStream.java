@@ -72,9 +72,9 @@ public class MultiPointOutputStream {
     MultiPointOutputStream(@NonNull final DownloadTask task, @NonNull BreakpointInfo info, @NonNull DownloadStore store,
         @Nullable Runnable syncRunnable) {
         this.task = task;
-        this.flushBufferSize = task.flushBufferSize;
-        this.syncBufferSize = task.syncBufferSize;
-        this.syncBufferIntervalMills = task.syncBufferIntervalMills;
+        this.flushBufferSize = task.getFlushBufferSize();
+        this.syncBufferSize = task.getSyncBufferSize();
+        this.syncBufferIntervalMills = task.getSyncBufferIntervalMills();
         this.info = info;
 
         this.store = store;
@@ -315,7 +315,7 @@ public class MultiPointOutputStream {
 
         if (outputStream == null) {
             @NonNull final Uri uri;
-            final boolean isFileScheme = Util.isUriFileScheme(task.uri);
+            final boolean isFileScheme = Util.isUriFileScheme(task.getUri());
             if (isFileScheme) {
                 final File file = task.getFile();
                 if (file == null) throw new FileNotFoundException("Filename is not ready!");
@@ -331,7 +331,7 @@ public class MultiPointOutputStream {
 
                 uri = Uri.fromFile(file);
             } else {
-                uri = task.uri;
+                uri = task.getUri();
             }
 
             outputStream = OKDownload.with().outputStreamFactory().create(OKDownload.with().context(), uri, flushBufferSize);
