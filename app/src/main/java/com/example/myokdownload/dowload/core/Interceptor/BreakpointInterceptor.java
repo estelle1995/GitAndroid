@@ -61,7 +61,7 @@ public class BreakpointInterceptor implements Interceptor.Connect, Interceptor.F
                     LogUtil.w(TAG, msg);
                     throw new RetryException(msg);
                 }
-                OKDownload.with().callbackDispatcher.dispatch().downloadFromBeginning(chain.getTask(), info, ResumeFailedCause.CONTENT_LENGTH_CHANGED);
+                OKDownload.with().callbackDispatcher().dispatch().downloadFromBeginning(chain.getTask(), info, ResumeFailedCause.CONTENT_LENGTH_CHANGED);
             }
         }
 

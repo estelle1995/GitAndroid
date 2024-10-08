@@ -2,6 +2,7 @@ package com.example.myokdownload.dowload.core;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -15,16 +16,20 @@ import com.example.myokdownload.dowload.DownloadTask;
 import com.example.myokdownload.dowload.OKDownload;
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo;
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo;
+import com.example.myokdownload.dowload.core.breakpoint.BreakpointStoreOnCache;
+import com.example.myokdownload.dowload.core.breakpoint.DownloadStore;
 import com.example.myokdownload.dowload.core.connection.DownloadConnection;
+import com.example.myokdownload.dowload.core.connection.DownloadUrlConnection;
 import com.example.myokdownload.dowload.core.log.LogUtil;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class Util {
     @Nullable
@@ -64,7 +69,7 @@ public class Util {
 
     @SuppressLint("Range")
     public static long getSizeFromContentUri(@NonNull Uri contentUri) {
-        final ContentResolver resolver = OKDownload.with().context.getContentResolver();
+        final ContentResolver resolver = OKDownload.with().context().getContentResolver();
         final Cursor cursor = resolver.query(contentUri, null, null, null, null);
         if (cursor != null) {
             try {
@@ -80,8 +85,8 @@ public class Util {
 
     public static void assembleBlock(@NonNull DownloadTask task, @NonNull BreakpointInfo info, long instanceLength, boolean isAcceptRange) {
         final int blockCount;
-        if (OKDownload.with().downloadStrategy.isUseMultiBlock(isAcceptRange)) {
-            blockCount = OKDownload.with().downloadStrategy.determineBlockCount(task, instanceLength);
+        if (OKDownload.with().downloadStrategy().isUseMultiBlock(isAcceptRange)) {
+            blockCount = OKDownload.with().downloadStrategy().determineBlockCount(task, instanceLength);
         } else {
             blockCount = 1;
         }
@@ -109,7 +114,7 @@ public class Util {
 
     @SuppressLint("Range")
     @Nullable public static String getFilenameFromContentUri(@NonNull Uri contentUri) {
-        final ContentResolver resolver = OKDownload.with().context.getContentResolver();
+        final ContentResolver resolver = OKDownload.with().context().getContentResolver();
         final Cursor cursor = resolver.query(contentUri, null, null, null, null);
         if (cursor != null) {
             try {
@@ -152,5 +157,49 @@ public class Util {
             LogUtil.w("resetBlockIfDirty", "block is dirty so have to reset: " + info);
             info.resetBlock();
         }
+    }
+
+    public static @NonNull DownloadStore createDefaultDatabase(Context context) {
+        // You can import through com.liulishuo.okdownload:sqlite:{version}
+        final String storeOnSqliteClassName
+                = "com.liulishuo.okdownload.core.breakpoint.BreakpointStoreOnSQLite";
+
+        try {
+            final Constructor<?> constructor = Class.forName(storeOnSqliteClassName)
+                    .getDeclaredConstructor(Context.class);
+            return (DownloadStore) constructor.newInstance(context);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 NoSuchMethodException | InvocationTargetException ignored) {
+        }
+
+        return new BreakpointStoreOnCache();
+    }
+
+    public static @NonNull DownloadStore createRemitDatabase(@NonNull DownloadStore originStore) {
+        DownloadStore finalStore = originStore;
+        try {
+            final Method createRemitSelf = originStore.getClass()
+                    .getMethod("createRemitSelf");
+            finalStore = (DownloadStore) createRemitSelf.invoke(originStore);
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ignored) {
+        }
+
+        LogUtil.d("Util", "Get final download store is " + finalStore);
+        assert finalStore != null;
+        return finalStore;
+    }
+
+    public static @NonNull DownloadConnection.Factory createDefaultConnectionFactory() {
+        final String okhttpConnectionClassName
+                = "com.liulishuo.okdownload.core.connection.DownloadOkHttp3Connection$Factory";
+        try {
+            final Constructor<?> constructor = Class.forName(okhttpConnectionClassName)
+                    .getDeclaredConstructor();
+            return (DownloadConnection.Factory) constructor.newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 NoSuchMethodException | InvocationTargetException ignored) {
+        }
+
+        return new DownloadUrlConnection.Factory();
     }
 }

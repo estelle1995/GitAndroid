@@ -42,7 +42,7 @@ public class ConnectionUtil {
     public static final int RANGE_NOT_SATISFIABLE = 416;
 
     public static boolean checkPermission(String permission) {
-        final int perm = OKDownload.with().context.checkCallingOrSelfPermission(permission);
+        final int perm = OKDownload.with().context().checkCallingOrSelfPermission(permission);
         return perm == PackageManager.PERMISSION_GRANTED;
     }
 

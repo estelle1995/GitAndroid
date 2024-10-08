@@ -151,7 +151,7 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
             providedPathFile = targetFile;
         }
 
-        this.id = OKDownload.with().breakpointStore.findOrCreateId(this);
+        this.id = OKDownload.with().breakpointStore().findOrCreateId(this);
     }
 
     public boolean isPassIfAlreadyCompleted() {
@@ -164,7 +164,7 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
     }
 
     @Nullable public BreakpointInfo getInfo() {
-        if (info == null) info = OKDownload.with().breakpointStore.get(id);
+        if (info == null) info = OKDownload.with().breakpointStore().get(id);
         return info;
     }
 
@@ -230,27 +230,27 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
 
     public void enqueue(DownloadListener listener) {
         this.listener = listener;
-        OKDownload.with().downloadDispatcher.enqueue(this);
+        OKDownload.with().downloadDispatcher().enqueue(this);
     }
 
     public static void enqueue(DownloadTask[] tasks, DownloadListener listener) {
         for (DownloadTask task : tasks) {
             task.listener = listener;
         }
-        OKDownload.with().downloadDispatcher.enqueue(tasks);
+        OKDownload.with().downloadDispatcher().enqueue(tasks);
     }
 
     public void cancel() {
-        OKDownload.with().downloadDispatcher.cancel(this);
+        OKDownload.with().downloadDispatcher().cancel(this);
     }
 
     public static void cancel(DownloadTask[] tasks) {
-        OKDownload.with().downloadDispatcher.cancel(tasks);
+        OKDownload.with().downloadDispatcher().cancel(tasks);
     }
 
     public void execute(DownloadListener listener) {
         this.listener = listener;
-        OKDownload.with().downloadDispatcher.execute(this);
+        OKDownload.with().downloadDispatcher().execute(this);
     }
 
     @Override public int hashCode() {

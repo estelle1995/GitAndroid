@@ -345,25 +345,25 @@ public class CallbackDispatcher {
 
         void inspectDownloadFromBreakpoint(@NonNull DownloadTask task,
                                            @NonNull BreakpointInfo info) {
-            final DownloadMonitor monitor = OKDownload.with().monitor;
+            final DownloadMonitor monitor = OKDownload.with().getMonitor();
             if (monitor != null) monitor.taskDownloadFromBreakpoint(task, info);
         }
 
         void inspectDownloadFromBeginning(@NonNull DownloadTask task,
                                           @NonNull BreakpointInfo info,
                                           @NonNull ResumeFailedCause cause) {
-            final DownloadMonitor monitor = OKDownload.with().monitor;
+            final DownloadMonitor monitor = OKDownload.with().getMonitor();
             if (monitor != null) monitor.taskDownloadFromBeginning(task, info, cause);
         }
 
         void inspectTaskStart(DownloadTask task) {
-            final DownloadMonitor monitor = OKDownload.with().monitor;
+            final DownloadMonitor monitor = OKDownload.with().getMonitor();
             if (monitor != null) monitor.taskStart(task);
         }
 
         void inspectTaskEnd(final DownloadTask task, final EndCause cause,
                             @Nullable final Exception realCause) {
-            final DownloadMonitor monitor = OKDownload.with().monitor;
+            final DownloadMonitor monitor = OKDownload.with().getMonitor();
             if (monitor != null) monitor.taskEnd(task, cause, realCause);
         }
     }

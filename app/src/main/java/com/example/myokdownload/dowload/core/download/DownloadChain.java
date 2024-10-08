@@ -87,11 +87,11 @@ public class DownloadChain implements Runnable {
         this.cache = cache;
         this.info = info;
         this.store = store;
-        this.callbackDispatcher = OKDownload.with().callbackDispatcher;
+        this.callbackDispatcher = OKDownload.with().callbackDispatcher();
     }
 
     void start() throws IOException {
-        final CallbackDispatcher dispatcher = OKDownload.with().callbackDispatcher;
+        final CallbackDispatcher dispatcher = OKDownload.with().callbackDispatcher();
         // connect chain
         final RetryInterceptor retryInterceptor = new RetryInterceptor();
         final BreakpointInterceptor breakpointInterceptor = new BreakpointInterceptor();
@@ -160,7 +160,7 @@ public class DownloadChain implements Runnable {
 
             LogUtil.d(TAG, "create connection on url: " + url);
 
-            connection = OKDownload.with().connectionFactory.create(url);
+            connection = OKDownload.with().connectionFactory().create(url);
         }
         return connection;
     }

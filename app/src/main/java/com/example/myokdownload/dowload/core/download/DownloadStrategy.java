@@ -52,7 +52,7 @@ public class DownloadStrategy {
     private ConnectivityManager manager = null;
 
     public boolean isUseMultiBlock(final boolean isAcceptRange) {
-        if (!OKDownload.with().outputStreamFactory.supportSeek()) return false;
+        if (!OKDownload.with().outputStreamFactory().supportSeek()) return false;
         return isAcceptRange;
     }
 
@@ -97,7 +97,7 @@ public class DownloadStrategy {
     }
 
     public boolean validFilenameFromStore(@NonNull DownloadTask task) {
-        final String filename = OKDownload.with().breakpointStore
+        final String filename = OKDownload.with().breakpointStore()
                 .getResponseFilename(task.getUrl());
         if (filename == null) return false;
 
@@ -130,13 +130,13 @@ public class DownloadStrategy {
     public boolean inspectAnotherSameInfo(@NonNull DownloadTask task, @NonNull BreakpointInfo info,
                                           long instanceLength) {
         if (!task.filenameFromResponse) return false;
-        final BreakpointStore store = OKDownload.with().breakpointStore;
+        final BreakpointStore store = OKDownload.with().breakpointStore();
         final BreakpointInfo anotherInfo = store.findAnotherInfoFromCompare(task, info);
         if (anotherInfo == null) return false;
 
         store.remove(anotherInfo.id);
 
-        if (anotherInfo.getTotalOffset() <= OKDownload.with().downloadStrategy.reuseIdledSameInfoThresholdBytes()) return false;
+        if (anotherInfo.getTotalOffset() <= OKDownload.with().downloadStrategy().reuseIdledSameInfoThresholdBytes()) return false;
 
         if (anotherInfo.etag != null && !anotherInfo.etag.equals(info.etag)) {
             return false;
@@ -169,7 +169,7 @@ public class DownloadStrategy {
         if (!isHasAccessNetworkStatePermission) return;
 
         if (manager == null) {
-            manager = (ConnectivityManager) OKDownload.with().context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            manager = (ConnectivityManager) OKDownload.with().context().getSystemService(Context.CONNECTIVITY_SERVICE);
         }
 
         if (!ConnectionUtil.isNetworkAvailable(manager)) {
@@ -192,7 +192,7 @@ public class DownloadStrategy {
         }
 
         if (manager == null) {
-            manager = (ConnectivityManager) OKDownload.with().context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            manager = (ConnectivityManager) OKDownload.with().context().getSystemService(Context.CONNECTIVITY_SERVICE);
         }
 
         if (ConnectionUtil.isNetworkNotOnWifiType(manager)) {
@@ -304,7 +304,7 @@ public class DownloadStrategy {
             final int code = connected.getResponseCode();
             final String newEtag = connected.getResponseHeaderField(ETAG);
 
-            final ResumeFailedCause resumeFailedCause = OKDownload.with().downloadStrategy
+            final ResumeFailedCause resumeFailedCause = OKDownload.with().downloadStrategy()
                     .getPreconditionFailedCause(code, blockInfo.getCurrentOffset() != 0,
                             info, newEtag);
 
@@ -313,7 +313,7 @@ public class DownloadStrategy {
                 throw new ResumeFailedException(resumeFailedCause);
             }
 
-            final boolean isServerCancelled = OKDownload.with().downloadStrategy
+            final boolean isServerCancelled = OKDownload.with().downloadStrategy()
                     .isServerCanceled(code, blockInfo.getCurrentOffset() != 0);
 
             if (isServerCancelled) {

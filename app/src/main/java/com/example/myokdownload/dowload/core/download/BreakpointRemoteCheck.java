@@ -64,7 +64,7 @@ public class BreakpointRemoteCheck {
     }
 
     public void check() throws IOException {
-        final DownloadStrategy downloadStrategy = OKDownload.with().downloadStrategy;
+        final DownloadStrategy downloadStrategy = OKDownload.with().downloadStrategy();
 
         ConnectTrial connectTrial = createConnectTrial();
         connectTrial.executeTrial();
@@ -81,7 +81,7 @@ public class BreakpointRemoteCheck {
         info.chunked = isChunked;
         info.etag = responseEtag;
 
-        if (OKDownload.with().downloadDispatcher.isFileConflictAfterRun(task)) {
+        if (OKDownload.with().downloadDispatcher().isFileConflictAfterRun(task)) {
             throw FileBusyAfterRunException.SIGNAL;
         }
 

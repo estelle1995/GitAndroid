@@ -78,8 +78,8 @@ public class MultiPointOutputStream {
         this.info = info;
 
         this.store = store;
-        this.supportSeek = OKDownload.with().outputStreamFactory.supportSeek();
-        this.isPreAllocateLength = OKDownload.with().processFileStrategy.isPreAllocateLength(task);
+        this.supportSeek = OKDownload.with().outputStreamFactory().supportSeek();
+        this.isPreAllocateLength = OKDownload.with().processFileStrategy().isPreAllocateLength(task);
         this.noMoreStreamList = new ArrayList<>();
         if (syncRunnable == null) {
             this.syncRunnable = new Runnable() {
@@ -237,11 +237,11 @@ public class MultiPointOutputStream {
             if (allNoSyncLength.get() <= 0) return;
             if (syncFuture != null && !syncFuture.isDone()) {
                 inspectValidPath();
-                OKDownload.with().processFileStrategy.getFileLock().increaseLock(path);
+                OKDownload.with().processFileStrategy().getFileLock().increaseLock(path);
                 try {
                     ensureSync(true, -1);
                 } finally {
-                    OKDownload.with().processFileStrategy.getFileLock().decreaseLock(path);
+                    OKDownload.with().processFileStrategy().getFileLock().decreaseLock(path);
                 }
             }
         } finally {
@@ -334,7 +334,7 @@ public class MultiPointOutputStream {
                 uri = task.uri;
             }
 
-            outputStream = OKDownload.with().outputStreamFactory.create(OKDownload.with().context, uri, flushBufferSize);
+            outputStream = OKDownload.with().outputStreamFactory().create(OKDownload.with().context(), uri, flushBufferSize);
             if (supportSeek) {
                 final long seekPoint = info.getBlock(blockIndex).getRangeLeft();
                 if (seekPoint > 0) {

@@ -164,7 +164,7 @@ public class DownloadDispatcher {
 
             final DownloadTask task = call.task;
             if (isFileConflictAfterRun(task)) {
-                OKDownload.with().callbackDispatcher.dispatch().taskEnd(task, EndCause.FILE_BUSY,
+                OKDownload.with().callbackDispatcher().dispatch().taskEnd(task, EndCause.FILE_BUSY,
                         null);
                 continue;
             }
@@ -211,16 +211,16 @@ public class DownloadDispatcher {
 
     boolean inspectCompleted(@NonNull DownloadTask task, @Nullable Collection<DownloadTask> completedCollection) {
         if (task.isPassIfAlreadyCompleted() && StatusUtil.isCompleted(task)) {
-            if (task.getFilename() == null && !OKDownload.with().downloadStrategy.validFilenameFromStore(task)) {
+            if (task.getFilename() == null && !OKDownload.with().downloadStrategy().validFilenameFromStore(task)) {
                 return false;
             }
 
-            OKDownload.with().downloadStrategy.validInfoOnCompleted(task, store);
+            OKDownload.with().downloadStrategy().validInfoOnCompleted(task, store);
 
             if (completedCollection != null) {
                 completedCollection.add(task);
             } else {
-                OKDownload.with().callbackDispatcher.dispatch().taskEnd(task, EndCause.COMPLETED, null);
+                OKDownload.with().callbackDispatcher().dispatch().taskEnd(task, EndCause.COMPLETED, null);
             }
         }
         return false;
@@ -242,7 +242,7 @@ public class DownloadDispatcher {
 
         final int originReadyAsyncCallSize = readyAsyncCalls.size();
         try {
-            OKDownload.with().downloadStrategy.inspectNetworkAvailable();
+            OKDownload.with().downloadStrategy().inspectNetworkAvailable();
 
             final Collection<DownloadTask> completedTaskList = new ArrayList<>();
             final Collection<DownloadTask> sameTaskConflictList = new ArrayList<>();
@@ -254,11 +254,11 @@ public class DownloadDispatcher {
 
                 enqueueIgnorePriority(task);
             }
-            OKDownload.with().callbackDispatcher
+            OKDownload.with().callbackDispatcher()
                     .endTasks(completedTaskList, sameTaskConflictList, fileBusyList);
         } catch (UnknownHostException e) {
             final Collection<DownloadTask> errorList = new ArrayList<>(taskList);
-            OKDownload.with().callbackDispatcher.endTasksWithError(errorList, e);
+            OKDownload.with().callbackDispatcher().endTasksWithError(errorList, e);
         }
 
         if (originReadyAsyncCallSize != readyAsyncCalls.size()) Collections.sort(readyAsyncCalls);
@@ -317,7 +317,7 @@ public class DownloadDispatcher {
 
     boolean inspectForConflict(@NonNull DownloadTask task, @NonNull Collection<DownloadCall> calls,
                                @Nullable Collection<DownloadTask> sameTaskList, @Nullable Collection<DownloadTask> fileBusyList) {
-        final CallbackDispatcher callbackDispatcher = OKDownload.with().callbackDispatcher;
+        final CallbackDispatcher callbackDispatcher = OKDownload.with().callbackDispatcher();
         final Iterator<DownloadCall> iterator = calls.iterator();
         while (iterator.hasNext()) {
             DownloadCall call = iterator.next();
@@ -470,7 +470,7 @@ public class DownloadDispatcher {
         if (!needCallbackCalls.isEmpty()) {
             if (needCallbackCalls.size() <= 1) {
                 final DownloadCall call = needCallbackCalls.get(0);
-                OKDownload.with().callbackDispatcher.dispatch().taskEnd(call.task,
+                OKDownload.with().callbackDispatcher().dispatch().taskEnd(call.task,
                         EndCause.CANCELED,
                         null);
             } else {
@@ -478,13 +478,13 @@ public class DownloadDispatcher {
                 for (DownloadCall call : needCallbackCalls) {
                     callbackCanceledTasks.add(call.task);
                 }
-                OKDownload.with().callbackDispatcher.endTasksWithCanceled(callbackCanceledTasks);
+                OKDownload.with().callbackDispatcher().endTasksWithCanceled(callbackCanceledTasks);
             }
         }
     }
 
     public static void setMaxParallelRunningCount(int maxParallelRunningCount) {
-        DownloadDispatcher dispatcher = OKDownload.with().downloadDispatcher;
+        DownloadDispatcher dispatcher = OKDownload.with().downloadDispatcher();
         if (dispatcher.getClass() != DownloadDispatcher.class) {
             throw new IllegalStateException(
                     "The current dispatcher is " + dispatcher + " not DownloadDispatcher exactly!");

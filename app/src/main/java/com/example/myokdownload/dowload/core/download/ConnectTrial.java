@@ -56,10 +56,10 @@ public class ConnectTrial {
     }
 
     public void executeTrial() throws IOException {
-        OKDownload.with().downloadStrategy.inspectNetworkOnWifi(task);
-        OKDownload.with().downloadStrategy.inspectNetworkAvailable();
+        OKDownload.with().downloadStrategy().inspectNetworkOnWifi(task);
+        OKDownload.with().downloadStrategy().inspectNetworkAvailable();
 
-        DownloadConnection connection = OKDownload.with().connectionFactory.create(task.getUrl());
+        DownloadConnection connection = OKDownload.with().connectionFactory().create(task.getUrl());
         boolean isNeedTrialHeadMethod;
         try {
             if (!TextUtils.isEmpty(info.etag)) {
@@ -69,7 +69,7 @@ public class ConnectTrial {
             final Map<String, List<String>> userHeader = task.headerMapFields;
             if (userHeader != null) ConnectionUtil.addRequestHeaderFields(userHeader, connection);
 
-            final DownloadListener listener = OKDownload.with().callbackDispatcher.dispatch();
+            final DownloadListener listener = OKDownload.with().callbackDispatcher().dispatch();
             final Map<String, List<String>> requestProperties = connection.getRequestProperties();
             listener.connectTrialStart(task, requestProperties);
 
@@ -124,8 +124,8 @@ public class ConnectTrial {
     }
 
     void trialHeadMethodForInstanceLength() throws IOException {
-        final DownloadConnection connection = OKDownload.with().connectionFactory.create(task.getUrl());
-        final DownloadListener listener = OKDownload.with().callbackDispatcher.dispatch();
+        final DownloadConnection connection = OKDownload.with().connectionFactory().create(task.getUrl());
+        final DownloadListener listener = OKDownload.with().callbackDispatcher().dispatch();
 
         try {
             connection.setRequestMethod(METHOD_HEAD);

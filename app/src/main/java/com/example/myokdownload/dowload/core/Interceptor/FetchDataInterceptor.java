@@ -28,7 +28,7 @@ public class FetchDataInterceptor implements Interceptor.Fetch {
         this.outputStream = outputStream;
 
         this.task = task;
-        this.dispatcher = OKDownload.with().callbackDispatcher;
+        this.dispatcher = OKDownload.with().callbackDispatcher();
     }
 
     @Override
@@ -36,7 +36,7 @@ public class FetchDataInterceptor implements Interceptor.Fetch {
         if (chain.getCache().isInterrupt()) {
             throw InterruptException.SIGNAL;
         }
-        OKDownload.with().downloadStrategy.inspectNetworkOnWifi(chain.getTask());
+        OKDownload.with().downloadStrategy().inspectNetworkOnWifi(chain.getTask());
         //fetch
         int fetchLength = inputStream.read(readBuffer);
         if (fetchLength == -1) {

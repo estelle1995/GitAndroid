@@ -86,7 +86,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
         int retryCount = 0;
 
         final OKDownload okDownload = OKDownload.with();
-        final ProcessFileStrategy fileStrategy = okDownload.processFileStrategy;
+        final ProcessFileStrategy fileStrategy = okDownload.processFileStrategy();
 
         inspectTaskStart();
         do {
@@ -129,7 +129,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
             fileStrategy.getFileLock().waitForRelease(task.getFile().getAbsolutePath());
 
             // 4. reuse another info if another info is idle adn available for reuse
-            OKDownload.with().downloadStrategy.inspectAnotherSameInfo(task, info, remoteCheck.getInstanceLength());
+            OKDownload.with().downloadStrategy().inspectAnotherSameInfo(task, info, remoteCheck.getInstanceLength());
 
             try {
                 if (remoteCheck.isResumable()) {
@@ -143,7 +143,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
                         fileStrategy.discardProcess(task);
                         assembleBlockAndCallbackFromBeginning(info, remoteCheck, localCheck.getCauseOrThrow());
                     } else {
-                        okDownload.callbackDispatcher.dispatch().downloadFromBreakpoint(task, info);
+                        okDownload.callbackDispatcher().dispatch().downloadFromBreakpoint(task, info);
                     }
                 } else {
                     LogUtil.d(TAG, "breakpoint invalid: download from beginning because of "
@@ -212,11 +212,11 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
         store.onTaskEnd(task.getId(), cause, realCause);
         if (cause == EndCause.COMPLETED) {
             store.markFileClear(task.getId());
-            OKDownload.with().processFileStrategy
+            OKDownload.with().processFileStrategy()
                     .completeProcessStream(cache.getOutputStream(), task);
         }
 
-        OKDownload.with().callbackDispatcher.dispatch().taskEnd(task, cause, realCause);
+        OKDownload.with().callbackDispatcher().dispatch().taskEnd(task, cause, realCause);
     }
 
     void start(final DownloadCache cache, BreakpointInfo info) throws InterruptedException {
@@ -269,7 +269,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
     void assembleBlockAndCallbackFromBeginning(@NonNull BreakpointInfo info, @NonNull BreakpointRemoteCheck remoteCheck,
                                                @NonNull ResumeFailedCause failedCause) {
         Util.assembleBlock(task, info, remoteCheck.getInstanceLength(), remoteCheck.isAcceptRange());
-        OKDownload.with().callbackDispatcher.dispatch().downloadFromBeginning(task, info, failedCause);
+        OKDownload.with().callbackDispatcher().dispatch().downloadFromBeginning(task, info, failedCause);
     }
 
     @NonNull BreakpointLocalCheck createLocalCheck(@NonNull BreakpointInfo info,
@@ -283,7 +283,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
     }
 
     DownloadCache createCache(@NonNull BreakpointInfo info) {
-        final MultiPointOutputStream outputStream = OKDownload.with().processFileStrategy.createProcessStream(task, info, store);
+        final MultiPointOutputStream outputStream = OKDownload.with().processFileStrategy().createProcessStream(task, info, store);
         return new DownloadCache(outputStream);
     }
 
@@ -298,13 +298,13 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
 
     @Override
     protected void finished() {
-        OKDownload.with().downloadDispatcher.finish(this);
+        OKDownload.with().downloadDispatcher().finish(this);
         LogUtil.d(TAG, "call is finished " + task.getId());
     }
 
     private void inspectTaskStart() {
         store.onTaskStart(task.getId());
-        OKDownload.with().callbackDispatcher.dispatch().taskStart(task);
+        OKDownload.with().callbackDispatcher().dispatch().taskStart(task);
     }
 
     Future<?> submitChain(DownloadChain chain) {
@@ -338,7 +338,7 @@ public class DownloadCall extends NamedRunnable implements Comparable<DownloadCa
 
         final long startCancelTime = SystemClock.uptimeMillis();
 
-        OKDownload.with().downloadDispatcher.flyingCanceled(this);
+        OKDownload.with().downloadDispatcher().flyingCanceled(this);
 
         final DownloadCache cache = this.cache;
         if (cache != null) cache.setUserCanceled();

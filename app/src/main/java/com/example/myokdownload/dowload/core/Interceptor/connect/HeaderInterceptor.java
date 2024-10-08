@@ -69,7 +69,7 @@ public class HeaderInterceptor implements Interceptor.Connect {
             throw InterruptException.SIGNAL;
         }
 
-        OKDownload.with().callbackDispatcher.dispatch()
+        OKDownload.with().callbackDispatcher().dispatch()
                 .connectStart(task, blockIndex, connection.getRequestProperties());
 
         DownloadConnection.Connected connected = chain.processConnect();
@@ -81,11 +81,11 @@ public class HeaderInterceptor implements Interceptor.Connect {
         Map<String, List<String>> responseHeaderFields = connected.getResponseHeaderFields();
         if (responseHeaderFields == null) responseHeaderFields = new HashMap<>();
 
-        OKDownload.with().callbackDispatcher.dispatch().connectEnd(task, blockIndex,
+        OKDownload.with().callbackDispatcher().dispatch().connectEnd(task, blockIndex,
                 connected.getResponseCode(), responseHeaderFields);
 
         // if precondition failed.
-        final DownloadStrategy strategy = OKDownload.with().downloadStrategy;
+        final DownloadStrategy strategy = OKDownload.with().downloadStrategy();
         final DownloadStrategy.ResumeAvailableResponseCheck responseCheck =
                 strategy.resumeAvailableResponseCheck(connected, blockIndex, info);
         responseCheck.inspect();

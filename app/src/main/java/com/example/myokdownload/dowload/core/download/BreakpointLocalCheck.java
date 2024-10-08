@@ -90,10 +90,10 @@ public class BreakpointLocalCheck {
     }
 
     public boolean isOutputStreamSupportResume() {
-        final boolean supportSeek = OKDownload.with().outputStreamFactory.supportSeek();
+        final boolean supportSeek = OKDownload.with().outputStreamFactory().supportSeek();
         if (supportSeek) return true;
 
         if (info.getBlockCount() != 1) return false;
-        return !OKDownload.with().processFileStrategy.isPreAllocateLength(task);
+        return !OKDownload.with().processFileStrategy().isPreAllocateLength(task);
     }
 }

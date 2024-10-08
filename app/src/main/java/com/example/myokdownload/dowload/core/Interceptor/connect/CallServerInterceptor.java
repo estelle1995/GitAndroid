@@ -13,8 +13,8 @@ public class CallServerInterceptor implements Interceptor.Connect {
     @NonNull
     @Override
     public DownloadConnection.Connected interceptConnect(DownloadChain chain) throws IOException {
-        OKDownload.with().downloadStrategy.inspectNetworkOnWifi(chain.getTask());
-        OKDownload.with().downloadStrategy.inspectNetworkAvailable();
+        OKDownload.with().downloadStrategy().inspectNetworkOnWifi(chain.getTask());
+        OKDownload.with().downloadStrategy().inspectNetworkAvailable();
 
         return chain.getConnectionOrCreate().execute();
     }

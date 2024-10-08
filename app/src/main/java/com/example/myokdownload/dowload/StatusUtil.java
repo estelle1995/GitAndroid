@@ -12,7 +12,7 @@ import java.io.File;
 public class StatusUtil {
 
     public static boolean isSameTaskPendingOrRunning(@NonNull DownloadTask task) {
-        return OKDownload.with().downloadDispatcher.findSameTask(task) != null;
+        return OKDownload.with().downloadDispatcher().findSameTask(task) != null;
     }
 
     public static Status getStatus(@NonNull DownloadTask task) {
@@ -20,7 +20,7 @@ public class StatusUtil {
         final Status status = isCompletedOrUnknown(task);
         if (status == Status.COMPLETED) return Status.COMPLETED;
 
-        final DownloadDispatcher dispatcher = OKDownload.with().downloadDispatcher;
+        final DownloadDispatcher dispatcher = OKDownload.with().downloadDispatcher();
 
         if (dispatcher.isPending(task)) return Status.PENDING;
         if (dispatcher.isRunning(task)) return Status.RUNNING;
@@ -38,7 +38,7 @@ public class StatusUtil {
     }
 
     public static Status isCompletedOrUnknown(@NonNull DownloadTask task) {
-        final BreakpointStore store = OKDownload.with().breakpointStore;
+        final BreakpointStore store = OKDownload.with().breakpointStore();
         final BreakpointInfo info = store.get(task.getId());
 
         @Nullable String filename = task.getFilename();
@@ -85,7 +85,7 @@ public class StatusUtil {
     }
 
     @Nullable public static BreakpointInfo getCurrentInfo(@NonNull DownloadTask task) {
-        final BreakpointStore store = OKDownload.with().breakpointStore;
+        final BreakpointStore store = OKDownload.with().breakpointStore();
         final int id = store.findOrCreateId(task);
 
         final BreakpointInfo info = store.get(id);
