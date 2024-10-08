@@ -216,6 +216,14 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
         return priority;
     }
 
+    public boolean isFilenameFromResponse() {
+        return filenameFromResponse;
+    }
+
+    @NonNull public MockTaskForCompare mock(int id) {
+        return new MockTaskForCompare(id, this);
+    }
+
     public static MockTaskForCompare mockTaskForCompare(int id) {
         return new MockTaskForCompare(id);
     }
@@ -230,6 +238,19 @@ public class DownloadTask extends IdentifiedTask implements Comparable<DownloadT
             task.listener = listener;
         }
         OKDownload.with().downloadDispatcher.enqueue(tasks);
+    }
+
+    public void cancel() {
+        OKDownload.with().downloadDispatcher.cancel(this);
+    }
+
+    public static void cancel(DownloadTask[] tasks) {
+        OKDownload.with().downloadDispatcher.cancel(tasks);
+    }
+
+    public void execute(DownloadListener listener) {
+        this.listener = listener;
+        OKDownload.with().downloadDispatcher.execute(this);
     }
 
     @Override public int hashCode() {

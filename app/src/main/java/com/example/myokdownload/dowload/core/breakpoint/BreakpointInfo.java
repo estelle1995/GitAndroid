@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.myokdownload.dowload.DownloadTask;
 import com.example.myokdownload.dowload.core.download.DownloadStrategy;
 
 import java.io.File;
@@ -59,6 +60,37 @@ public class BreakpointInfo {
         this.taskOnlyProvidedParentPath = taskOnlyProvidedParentPath;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
+    public boolean isSameFrom(DownloadTask task) {
+        if (!parentFile.equals(task.getParentFile())) {
+            return false;
+        }
+
+        if (!url.equals(task.getUrl())) return false;
+
+        final String otherFilename = task.getFilename();
+        if (otherFilename != null && otherFilename.equals(filenameHolder.get())) return true;
+
+        if (taskOnlyProvidedParentPath) {
+            // filename is provided by response.
+            if (!task.isFilenameFromResponse()) return false;
+
+            return otherFilename == null || otherFilename.equals(filenameHolder.get());
+        }
+
+        return false;
+    }
+
+    @Nullable public String getFilename() {
+        return filenameHolder.get();
+    }
+
+    boolean isTaskOnlyProvidedParentPath() {
+        return taskOnlyProvidedParentPath;
+    }
 
     public BlockInfo getBlock(int blockIndex) {
         return blockInfoList.get(blockIndex);
