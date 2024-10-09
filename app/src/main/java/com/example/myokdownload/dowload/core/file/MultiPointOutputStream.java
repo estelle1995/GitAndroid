@@ -103,7 +103,139 @@ public class MultiPointOutputStream {
     }
 
     void runSyncDelayException() {
+        try {
+            runSync();
+        } catch (IOException e) {
+            syncException = e;
+            LogUtil.w(TAG, "Sync to breakpoint-store for task[" + task.getId() + "] "
+                    + "failed with cause: " + e);
+        }
+    }
 
+    StreamsState state = new StreamsState();
+
+    void runSync() throws IOException {
+        LogUtil.d(TAG, "OutputStream start flush looper task[" + task.getId() + "] with "
+                + "syncBufferIntervalMills[" + syncBufferIntervalMills + "] " + "syncBufferSize["
+                + syncBufferSize + "]");
+        runSyncThread = Thread.currentThread();
+
+        long nextParkMills = syncBufferIntervalMills;
+
+        flushProcess();
+
+        while (true) {
+            parkThread(nextParkMills);
+
+            inspectStreamState(state);
+
+            // if is no more stream, we will flush all data and quit.
+            if (state.isStreamsEndOrChanged()) {
+                LogUtil.d(TAG, "runSync state change isNoMoreStream[" + state.isNoMoreStream + "]"
+                        + " newNoMoreStreamBlockList[" + state.newNoMoreStreamBlockList + "]");
+                if (allNoSyncLength.get() > 0) {
+                    flushProcess();
+                }
+
+                for (Integer blockIndex : state.newNoMoreStreamBlockList) {
+                    final Thread parkedThread = parkedRunBlockThreadMap.get(blockIndex);
+                    parkedRunBlockThreadMap.remove(blockIndex);
+                    if (parkedThread != null) unparkThread(parkedThread);
+                }
+
+                if (state.isNoMoreStream) {
+                    final int size = parkedRunBlockThreadMap.size();
+                    for (int i = 0; i < size; i++) {
+                        final Thread parkedThread = parkedRunBlockThreadMap.valueAt(i);
+                        if (parkedThread != null) unparkThread(parkedThread);
+                    }
+                    parkedRunBlockThreadMap.clear();
+                    break;
+                } else {
+                    continue;
+                }
+            }
+
+            if (isNoNeedFlushForLength()) {
+                nextParkMills = syncBufferIntervalMills;
+                continue;
+            }
+
+            nextParkMills = getNextParkMillisecond();
+            if (nextParkMills > 0) {
+                continue;
+            }
+
+            flushProcess();
+            nextParkMills = syncBufferIntervalMills;
+        }
+
+        LogUtil.d(TAG, "OutputStream stop flush looper task[" + task.getId() + "]");
+    }
+
+    // convenient for test.
+    long getNextParkMillisecond() {
+        long farToLastSyncMills = now() - lastSyncTimestamp.get();
+        return syncBufferIntervalMills - farToLastSyncMills;
+    }
+
+    // convenient for test.
+    long now() {
+        return SystemClock.uptimeMillis();
+    }
+
+    // convenient for test.
+    boolean isNoNeedFlushForLength() {
+        return allNoSyncLength.get() < syncBufferSize;
+    }
+
+    void flushProcess() throws IOException {
+        boolean success;
+        final int size;
+        synchronized (noSyncLengthMap) {
+            // make sure the length of noSyncLengthMap is equal to outputStreamMap
+            size = noSyncLengthMap.size();
+        }
+
+        final SparseArray<Long> increaseLengthMap = new SparseArray<>(size);
+
+        try {
+            for (int i = 0; i < size; i++) {
+                final int blockIndex = outputStreamMap.keyAt(i);
+                // because we get no sync length value before flush and sync,
+                // so the length only possible less than or equal to the real persist
+                // length.
+                final long noSyncLength = noSyncLengthMap.get(blockIndex).get();
+                if (noSyncLength > 0) {
+                    increaseLengthMap.put(blockIndex, noSyncLength);
+                    final DownloadOutputStream outputStream = outputStreamMap
+                            .get(blockIndex);
+                    outputStream.flushAndSync();
+                }
+            }
+            success = true;
+        } catch (IOException ex) {
+            LogUtil.w(TAG, "OutputStream flush and sync data to filesystem failed " + ex);
+            success = false;
+        }
+
+        if (success) {
+            final int increaseLengthSize = increaseLengthMap.size();
+            long allIncreaseLength = 0;
+            for (int i = 0; i < increaseLengthSize; i++) {
+                final int blockIndex = increaseLengthMap.keyAt(i);
+                final long noSyncLength = increaseLengthMap.valueAt(i);
+                store.onSyncToFilesystemSuccess(info, blockIndex, noSyncLength);
+                allIncreaseLength += noSyncLength;
+                noSyncLengthMap.get(blockIndex).addAndGet(-noSyncLength);
+                LogUtil.d(TAG, "OutputStream sync success (" + task.getId() + ") "
+                        + "block(" + blockIndex + ") " + " syncLength(" + noSyncLength + ")"
+                        + " currentOffset(" + info.getBlock(blockIndex).getCurrentOffset()
+                        + ")");
+            }
+            allNoSyncLength.addAndGet(-allIncreaseLength);
+            lastSyncTimestamp.set(SystemClock.uptimeMillis());
+        }
     }
 
     void inspectAndPersist() throws IOException {

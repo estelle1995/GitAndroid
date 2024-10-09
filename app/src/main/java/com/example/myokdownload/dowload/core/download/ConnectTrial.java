@@ -221,7 +221,7 @@ public class ConnectTrial {
     }
 
     private static long findInstanceLength(DownloadConnection.Connected connected) {
-        final long instanceLength = parseContentRangeFoInstanceLength(CONTENT_RANGE);
+        final long instanceLength = parseContentRangeFoInstanceLength(connected.getResponseHeaderField(CONTENT_RANGE));
         if (instanceLength != CHUNKED_CONTENT_LENGTH) return instanceLength;
 
         final boolean isChunked = parseTransferEncoding(connected.getResponseHeaderField(TRANSFER_ENCODING));
