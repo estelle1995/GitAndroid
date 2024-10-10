@@ -49,7 +49,7 @@ public class BreakpointLocalCheck {
         final int blockCount = info.getBlockCount();
 
         if (blockCount <= 0) return false;
-        if (info.chunked) return false;
+        if (info.isChunked()) return false;
         if (info.getFile() == null) return false;
         final File fileOnTask = task.getFile();
         if (!info.getFile().equals(fileOnTask)) return false;

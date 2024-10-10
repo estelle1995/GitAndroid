@@ -60,7 +60,7 @@ public class HeaderInterceptor implements Interceptor.Connect {
                 + blockInfo.getCurrentOffset() + ")");
 
         // add etag if exist
-        final String etag = info.etag;
+        final String etag = info.getEtag();
         if (!TextUtils.isEmpty(etag)) {
             connection.addHeader(IF_MATCH, etag);
         }

@@ -38,7 +38,7 @@ public class BreakpointInterceptor implements Interceptor.Connect, Interceptor.F
             throw InterruptException.SIGNAL;
         }
 
-        if (info.getBlockCount() == 1 && !info.chunked) {
+        if (info.getBlockCount() == 1 && !info.isChunked()) {
             // only one block to download this resource
             // use this block response header instead of trial result if they are different.
             final long blockInstanceLength = getExactContentLengthRangeFrom0(connected);

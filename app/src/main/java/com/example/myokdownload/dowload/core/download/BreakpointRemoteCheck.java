@@ -78,8 +78,8 @@ public class BreakpointRemoteCheck {
         final int responseCode = connectTrial.getResponseCode();
 
         downloadStrategy.validFilenameFromResponse(responseFilename, task, info);
-        info.chunked = isChunked;
-        info.etag = responseEtag;
+        info.setChunked(isChunked);
+        info.setEtag(responseEtag);
 
         if (OKDownload.with().downloadDispatcher().isFileConflictAfterRun(task)) {
             throw FileBusyAfterRunException.SIGNAL;

@@ -480,7 +480,7 @@ public class MultiPointOutputStream {
                 store.markFileDirty(task.getId());
             }
 
-            if (!info.chunked && firstOutputStream && isPreAllocateLength) {
+            if (!info.isChunked() && firstOutputStream && isPreAllocateLength) {
                 final long totalLength = info.getTotalLength();
                 if (isFileScheme) {
                     final File file = task.getFile();

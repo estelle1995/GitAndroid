@@ -57,7 +57,7 @@ public class DownloadStrategy {
     }
 
     @Nullable public ResumeFailedCause getPreconditionFailedCause(int responseCode, boolean isAlreadyProceed, @NonNull BreakpointInfo info, @Nullable String responseEtag) {
-        final String localEtag = info.etag;
+        final String localEtag = info.getEtag();
         if (responseCode == HttpURLConnection.HTTP_PRECON_FAILED) {
             return RESPONSE_PRECONDITION_FAILED;
         }
@@ -144,11 +144,11 @@ public class DownloadStrategy {
         final BreakpointInfo anotherInfo = store.findAnotherInfoFromCompare(task, info);
         if (anotherInfo == null) return false;
 
-        store.remove(anotherInfo.id);
+        store.remove(anotherInfo.getId());
 
         if (anotherInfo.getTotalOffset() <= OKDownload.with().downloadStrategy().reuseIdledSameInfoThresholdBytes()) return false;
 
-        if (anotherInfo.etag != null && !anotherInfo.etag.equals(info.etag)) {
+        if (anotherInfo.getEtag() != null && !anotherInfo.getEtag().equals(info.getEtag())) {
             return false;
         }
 
@@ -218,7 +218,7 @@ public class DownloadStrategy {
                 synchronized (task) {
                     if (TextUtils.isEmpty(task.getFilename())) {
                         task.getFilenameHolder().set(filename);
-                        info.filenameHolder.set(filename);
+                        info.getFilenameHolder().set(filename);
                     }
                 }
             }

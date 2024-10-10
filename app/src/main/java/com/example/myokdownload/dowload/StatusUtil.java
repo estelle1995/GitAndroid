@@ -46,7 +46,7 @@ public class StatusUtil {
         @Nullable final File targetFile = task.getFile();
 
         if (info != null) {
-            if (!info.chunked && info.getTotalLength() <= 0) {
+            if (!info.isChunked() && info.getTotalLength() <= 0) {
                 return Status.UNKNOWN;
             } else if ((targetFile != null && targetFile.equals(info.getFile()))
                     && targetFile.exists()

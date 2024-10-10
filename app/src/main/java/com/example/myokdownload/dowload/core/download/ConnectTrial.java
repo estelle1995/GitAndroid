@@ -62,8 +62,8 @@ public class ConnectTrial {
         DownloadConnection connection = OKDownload.with().connectionFactory().create(task.getUrl());
         boolean isNeedTrialHeadMethod;
         try {
-            if (!TextUtils.isEmpty(info.etag)) {
-                connection.addHeader(IF_MATCH, info.etag);
+            if (!TextUtils.isEmpty(info.getEtag())) {
+                connection.addHeader(IF_MATCH, info.getEtag());
             }
             connection.addHeader(RANGE, "bytes=0-0");
             final Map<String, List<String>> userHeader = task.getHeaderMapFields();
@@ -120,7 +120,7 @@ public class ConnectTrial {
     }
 
     public boolean isEtagOverdue() {
-        return info.etag != null && !info.etag.equals(responseEtag);
+        return info.getEtag() != null && !info.getEtag().equals(responseEtag);
     }
 
     void trialHeadMethodForInstanceLength() throws IOException {

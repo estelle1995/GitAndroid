@@ -155,7 +155,7 @@ public class DownloadChain implements Runnable {
             if (redirectLocation != null) {
                 url = redirectLocation;
             } else {
-                url = info.url;
+                url = info.getUrl();
             }
 
             LogUtil.d(TAG, "create connection on url: " + url);
