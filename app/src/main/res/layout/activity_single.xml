@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingTop="@dimen/activity_padding_top"
-    tools:context=".SingleActivity">
+    tools:context=".sample.SingleActivity">
 
     <TextView
         android:id="@+id/statusTv"

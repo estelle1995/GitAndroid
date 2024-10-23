@@ -1,6 +1,7 @@
-package com.example.myokdownload
+package com.example.myokdownload.sample
 
 import android.os.Bundle
+import com.example.myokdownload.R
 
 class MainActivity : BaseListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,10 +17,10 @@ class MainActivity : BaseListActivity() {
             R.string.single_download_title, R.string.single_download_desc,
             SingleActivity::class.java
         )
-//        holder!!.addItem(
-//            R.string.each_block_progress_title, R.string.each_block_progress_desc,
-//            EachBlockProgressActivity::class.java
-//        )
+        holder!!.addItem(
+            R.string.each_block_progress_title, R.string.each_block_progress_desc,
+            EachBlockProgressActivity::class.java
+        )
 //        holder!!.addItem(
 //            R.string.queue_download_title, R.string.queue_download_desc,
 //            QueueActivity::class.java

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.myokdownload.util;
+package com.example.myokdownload.sample.util;
 
 import android.content.Context;
 import android.widget.ProgressBar;

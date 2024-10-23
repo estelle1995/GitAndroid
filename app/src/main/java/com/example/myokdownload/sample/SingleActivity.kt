@@ -1,8 +1,9 @@
-package com.example.myokdownload
+package com.example.myokdownload.sample
 
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
+import com.example.myokdownload.R
 import com.example.myokdownload.databinding.ActivitySingleBinding
 import com.example.myokdownload.dowload.DownloadTask
 import com.example.myokdownload.dowload.SpeedCalculator
@@ -11,7 +12,7 @@ import com.example.myokdownload.dowload.core.Util
 import com.example.myokdownload.dowload.core.cause.EndCause
 import com.example.myokdownload.kotlin_enhance.enqueue4WithSpeed
 import com.example.myokdownload.kotlin_enhance.spChannel
-import com.example.myokdownload.util.DemoUtil
+import com.example.myokdownload.sample.util.DemoUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.consumeEach

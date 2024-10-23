@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.myokdownload;
+package com.example.myokdownload.sample;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -27,6 +27,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.myokdownload.R;
 
 import java.util.ArrayList;
 import java.util.List;

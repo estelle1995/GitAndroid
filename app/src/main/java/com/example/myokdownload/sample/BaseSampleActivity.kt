@@ -1,4 +1,4 @@
-package com.example.myokdownload
+package com.example.myokdownload.sample
 
 import android.content.Intent
 import android.net.Uri
@@ -7,6 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import com.example.myokdownload.R
 
 abstract class BaseSampleActivity : AppCompatActivity() {
 
