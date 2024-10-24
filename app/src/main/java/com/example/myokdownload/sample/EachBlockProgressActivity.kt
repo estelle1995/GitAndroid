@@ -31,6 +31,8 @@ class EachBlockProgressActivity: BaseSampleActivity() {
         binding = ActivityEachBlockProgressBinding.inflate(layoutInflater)
         setContentView(binding.root)
         task = createTask()
+        initStatus()
+        initAction()
     }
 
     private fun initStatus() {
@@ -64,6 +66,27 @@ class EachBlockProgressActivity: BaseSampleActivity() {
                 task?.tag = "mark-task-started"
             }
         }
+
+        binding.startSameTaskView.setOnClickListener {
+            val started = task?.tag != null
+            if (!started) return@setOnClickListener
+            val task = createTask()
+            task.enqueue(EachBlockProgressUtil.createSampleListener(binding.extInfoTv));
+        }
+
+        binding.startSameFileView.setOnClickListener {
+            val started = task?.tag != null
+            if (!started) return@setOnClickListener
+
+            val sameFileAnotherUrlTask = createSameFileAnotherUrlTask()
+            sameFileAnotherUrlTask.enqueue(EachBlockProgressUtil.createSampleListener(binding.extInfoTv))
+        }
+    }
+
+    private fun createSameFileAnotherUrlTask(): DownloadTask {
+        val anotherUrl =
+            "http://dldir1.qq.com/weixin/android/seixin6516android1120.apk"
+        return createTask(anotherUrl)
     }
 
     private fun startTask() {

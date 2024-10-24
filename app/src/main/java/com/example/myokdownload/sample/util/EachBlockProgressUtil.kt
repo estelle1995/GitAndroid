@@ -3,15 +3,90 @@ package com.example.myokdownload.sample.util
 import android.util.Log
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.example.myokdownload.R
+import com.example.myokdownload.dowload.DownloadListener
+import com.example.myokdownload.dowload.DownloadTask
 import com.example.myokdownload.dowload.core.Util
 import com.example.myokdownload.dowload.core.breakpoint.BlockInfo
 import com.example.myokdownload.dowload.core.breakpoint.BreakpointInfo
+import com.example.myokdownload.dowload.core.cause.EndCause
+import com.example.myokdownload.dowload.core.cause.ResumeFailedCause
 
 object EachBlockProgressUtil {
     private const val TAG: String = "EachBlockProgressUtil"
 
     fun updateProgress(progressBar: ProgressBar, currentOffset: Long) {
         ProgressUtil.updateProgressToViewWithMark(progressBar, currentOffset)
+    }
+
+    fun createSampleListener(extInfoTv: TextView): DownloadListener {
+        return object: DownloadListener {
+            override fun taskStart(task: DownloadTask) {
+                extInfoTv.setText(R.string.task_start)
+            }
+
+            override fun connectTrialStart(
+                task: DownloadTask,
+                requestHeaderFields: MutableMap<String, MutableList<String>>
+            ) {
+                extInfoTv.setText(R.string.connect_trial_start)
+            }
+
+            override fun connectTrialEnd(
+                task: DownloadTask,
+                responseCode: Int,
+                responseHeaderFields: MutableMap<String, MutableList<String>>
+            ) {
+                extInfoTv.setText(R.string.connect_trial_end)
+            }
+
+            override fun downloadFromBeginning(
+                task: DownloadTask,
+                info: BreakpointInfo,
+                cause: ResumeFailedCause
+            ) {
+                extInfoTv.setText(R.string.download_from_beginning)
+            }
+
+            override fun downloadFromBreakpoint(task: DownloadTask, info: BreakpointInfo) {
+                extInfoTv.setText(R.string.download_from_breakpoint)
+            }
+
+            override fun connectStart(
+                task: DownloadTask,
+                blockIndex: Int,
+                requestHeaderFields: MutableMap<String, MutableList<String>>
+            ) {
+                extInfoTv.setText(R.string.connect_start)
+            }
+
+            override fun connectEnd(
+                task: DownloadTask,
+                blockIndex: Int,
+                responseCode: Int,
+                responseHeaderFields: MutableMap<String, MutableList<String>>
+            ) {
+                extInfoTv.setText(R.string.connect_end)
+            }
+
+            override fun fetchStart(task: DownloadTask, blockIndex: Int, contentLength: Long) {
+                extInfoTv.setText(R.string.fetch_start)
+            }
+
+            override fun fetchProgress(task: DownloadTask, blockIndex: Int, increaseBytes: Long) {
+                extInfoTv.setText(R.string.fetch_progress)
+            }
+
+            override fun fetchEnd(task: DownloadTask, blockIndex: Int, contentLength: Long) {
+                extInfoTv.setText(R.string.fetch_end)
+            }
+
+            override fun taskEnd(task: DownloadTask, cause: EndCause, realCause: Exception?) {
+                val status = ("Task" + task.id).toString() + " End with: " + cause
+                extInfoTv.text = status
+            }
+
+        }
     }
 
     fun getSpeedTv(
