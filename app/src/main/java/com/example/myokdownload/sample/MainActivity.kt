@@ -13,18 +13,18 @@ class MainActivity : BaseListActivity() {
     }
 
     override fun setupAdapter(holder: ItemsHolder?) {
-        holder!!.addItem(
+        holder?.addItem(
             R.string.single_download_title, R.string.single_download_desc,
             SingleActivity::class.java
         )
-        holder!!.addItem(
+        holder?.addItem(
             R.string.each_block_progress_title, R.string.each_block_progress_desc,
             EachBlockProgressActivity::class.java
         )
-//        holder!!.addItem(
-//            R.string.queue_download_title, R.string.queue_download_desc,
-//            QueueActivity::class.java
-//        )
+        holder?.addItem(
+            R.string.queue_download_title, R.string.queue_download_desc,
+            QueueActivity::class.java
+        )
 //        holder!!.addItem(
 //            R.string.bunch_download_title, R.string.bunch_download_desc,
 //            BunchActivity::class.java

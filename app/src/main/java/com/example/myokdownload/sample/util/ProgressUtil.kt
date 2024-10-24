@@ -12,7 +12,7 @@ object ProgressUtil {
         updateProgressToViewWithMark(bar, currentOffset, true)
     }
 
-    private fun updateProgressToViewWithMark(
+    fun updateProgressToViewWithMark(
         bar: ProgressBar, currentOffset: Long,
         anim: Boolean
     ) {
@@ -24,7 +24,7 @@ object ProgressUtil {
         bar.setProgress(progress, anim)
     }
 
-    private fun calcProgressToViewAndMark(bar: ProgressBar, offset: Long, total: Long, anim: Boolean) {
+    fun calcProgressToViewAndMark(bar: ProgressBar, offset: Long, total: Long, anim: Boolean) {
         val contentLengthOnInt = reducePrecision(total)
         val shrinkRate = if (contentLengthOnInt == 0) 1 else (total / contentLengthOnInt).toInt()
         bar.tag = shrinkRate

@@ -32,8 +32,8 @@
         </activity>
 
         <activity android:name=".sample.SingleActivity" />
-
         <activity android:name=".sample.EachBlockProgressActivity" />
+        <activity android:name=".sample.QueueActivity" />
     </application>
 
 </manifest>
