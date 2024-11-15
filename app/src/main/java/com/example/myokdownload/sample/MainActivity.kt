@@ -25,10 +25,10 @@ class MainActivity : BaseListActivity() {
             R.string.queue_download_title, R.string.queue_download_desc,
             QueueActivity::class.java
         )
-//        holder!!.addItem(
-//            R.string.bunch_download_title, R.string.bunch_download_desc,
-//            BunchActivity::class.java
-//        )
+        holder!!.addItem(
+            R.string.bunch_download_title, R.string.bunch_download_desc,
+            BunchActivity::class.java
+        )
 //        holder.addItem(R.string.task_manager_title, R.string.task_manager_desc,
 //                ManagerActivity.class);
         //        holder.addItem(R.string.task_manager_title, R.string.task_manager_desc,

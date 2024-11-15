@@ -1,5 +1,4 @@
 package com.example.myokdownload.note;
-
 public class Solution {
     public String solve (String s, String t) {
         // write code here

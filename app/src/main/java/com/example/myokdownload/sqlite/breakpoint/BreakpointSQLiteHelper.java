@@ -2,10 +2,15 @@ package com.example.myokdownload.sqlite.breakpoint;
 
 import static com.example.myokdownload.sqlite.breakpoint.BreakpointSQLiteKey.*;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BreakpointSQLiteHelper extends SQLiteOpenHelper {
     private static final String NAME = "okdownload-breakpoint.db";
@@ -48,6 +53,38 @@ public class BreakpointSQLiteHelper extends SQLiteOpenHelper {
         if (oldVersion <= 2) {
             db.execSQL(Migration.TASK_FILE_DIRTY_NONE_TO_2);
         }
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    }
+
+    public void markFileDirty(int id) {
+        final SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues(1);
+        values.put(ID, id);
+        db.insert(TASK_FILE_DIRTY_TABLE_NAME, null, values);
+    }
+
+    public void markFileClear(int id) {
+        getWritableDatabase().delete(TASK_FILE_DIRTY_TABLE_NAME, ID + " = ?",
+                new String[]{String.valueOf(id)});
+    }
+
+    public List<Integer> loadDirtyFileList() {
+        final List<Integer> dirtyFileList = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = getWritableDatabase().rawQuery(Select.ALL_FROM_TASK_FILE_DIRTY,
+                    null);
+            while (cursor.moveToNext()) {
+                dirtyFileList.add(cursor.getInt(cursor.getColumnIndex(ID)));
+            }
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+
+        return dirtyFileList;
     }
 
     private interface CreateTable {
